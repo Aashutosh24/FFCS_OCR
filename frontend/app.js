@@ -722,6 +722,16 @@
             updateStats();
             hideClashAlert();
 
+            for (const [key, id] of placedOcrSlots.entries()) {
+                if (id === courseId) {
+                    placedOcrSlots.delete(key);
+                }
+            }
+
+            if (typeof refreshOcrCourseButtons === 'function') {
+                refreshOcrCourseButtons(course.code);
+            }
+
             console.log(`🗑️ Course removed: ${course.name}`);
         }
 
@@ -1209,44 +1219,63 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
     showToast(`✓ Added ${courseName} [${slotStr}] to timetable!`, 'success');
 }
 
-// 1-Click Toggle Screenshot slot into timetable
-function toggleScreenshotSlot(slotStr, courseCode = '', courseTitle = '', btnEl = null) {
+// 1-Click Toggle Screenshot slot into timetable with Faculty & Venue
+function toggleScreenshotSlot(
+    slotStr,
+    courseCode = '',
+    courseTitle = '',
+    faculty = '',
+    venue = '',
+    btnEl = null
+) {
     if (!slotStr) return;
     const compoundSlots = slotStr.split('+').map(s => s.trim().toUpperCase());
     const isLab = compoundSlots.some(s => s.startsWith('L'));
     const slotType = isLab ? 'lab' : 'theory';
     const code = courseCode || 'CUSTOM';
     const title = courseTitle || (courseCode ? courseCode : `Course (${slotStr})`);
-    const key = `SS_${code}_${slotStr}`;
+    const facKey = (faculty || '').trim().toLowerCase();
+    const key = `SS_${code}_${slotStr}_${facKey}`;
 
-    // If already placed, remove it
+    // 1. If this exact slot + faculty is already placed, remove it (toggle off)
     if (placedOcrSlots.has(key)) {
         const existingId = placedOcrSlots.get(key);
         removeCourse(existingId);
         placedOcrSlots.delete(key);
-        if (btnEl) {
-            btnEl.classList.remove('placed');
-            btnEl.innerHTML = `➕ ${escapeHtml(slotStr)}`;
-        }
+        refreshScreenshotButtons(code);
         showToast(`Removed ${title} [${slotStr}] from timetable`, 'info');
         return;
     }
 
-    // Validate against slot mappings
+    // 2. If another option for this course was already placed, remove it first (switch faculty/slot)
+    const prevCourse = selectedCourses.find(
+        c => (code && c.code === code) || c.name.toLowerCase() === title.toLowerCase()
+    );
+    if (prevCourse) {
+        removeCourse(prevCourse.id);
+        for (const [k, id] of placedOcrSlots.entries()) {
+            if (id === prevCourse.id) {
+                placedOcrSlots.delete(k);
+            }
+        }
+    }
+
+    // 3. Validate against slot mappings
     const unmapped = compoundSlots.filter(s => !slotMappings[s]);
     if (unmapped.length > 0) {
         showToast(`Warning: Slot "${unmapped.join(', ')}" is not defined in timetable mappings.`, 'warning');
     }
 
-    // Check for timetable clashes
+    // 4. Check for timetable clashes
     const clashes = checkForClashes(compoundSlots, slotType, title);
     if (clashes.length > 0) {
         showClashAlert(clashes, title, slotStr, slotType);
         showToast(`Clash detected for ${title} (${slotStr})! Check the clash alert above.`, 'error');
+        refreshScreenshotButtons(code);
         return;
     }
 
-    // Calculate credits
+    // 5. Calculate credits
     let credits = isLab ? 1 : (compoundSlots.length >= 3 ? 4 : (compoundSlots.length === 2 ? 3 : 2));
 
     const courseItem = {
@@ -1257,8 +1286,8 @@ function toggleScreenshotSlot(slotStr, courseCode = '', courseTitle = '', btnEl 
         type: slotType,
         credits: credits,
         slots: compoundSlots,
-        faculty: '',
-        venue: ''
+        faculty: faculty && faculty !== 'TBA' ? faculty : '',
+        venue: venue && venue !== 'TBA' ? venue : ''
     };
 
     selectedCourses.push(courseItem);
@@ -1268,12 +1297,48 @@ function toggleScreenshotSlot(slotStr, courseCode = '', courseTitle = '', btnEl 
     hideClashAlert();
 
     placedOcrSlots.set(key, courseItem.id);
-    if (btnEl) {
-        btnEl.classList.add('placed');
-        btnEl.innerHTML = `✓ ${escapeHtml(slotStr)} Added`;
-    }
+    refreshScreenshotButtons(code);
 
-    showToast(`✓ Added ${title} [${slotStr}] to timetable!`, 'success');
+    showToast(`✓ Added ${title} [${slotStr}]${faculty && faculty !== 'TBA' ? ` (${faculty})` : ''} to timetable!`, 'success');
+}
+
+function refreshScreenshotButtons(courseCode) {
+    const container = document.getElementById('screenshotPreview');
+    if (!container) return;
+
+    const buttons = container.querySelectorAll('.ocr-add-slot-btn');
+    buttons.forEach((btn) => {
+        const btnCode = btn.getAttribute('data-course-code');
+        const btnSlot = btn.getAttribute('data-slot');
+        const btnFac = btn.getAttribute('data-faculty') || '';
+        if (!btnSlot) return;
+
+        if (!courseCode || btnCode === courseCode) {
+            const facKey = btnFac.trim().toLowerCase();
+            const thisKey = `SS_${btnCode || 'CUSTOM'}_${btnSlot}_${facKey}`;
+            const isPlaced = placedOcrSlots.has(thisKey);
+            const anyPlacedForCourse = selectedCourses.some(
+                c => (btnCode && c.code === btnCode) || c.name.toLowerCase() === (btn.getAttribute('data-course-name') || '').toLowerCase()
+            );
+
+            if (isPlaced) {
+                btn.classList.add('placed');
+                btn.classList.remove('ocr-slot-alternative');
+                btn.style.opacity = '1';
+                btn.innerHTML = `✓ Added`;
+            } else if (anyPlacedForCourse) {
+                btn.classList.remove('placed');
+                btn.classList.add('ocr-slot-alternative');
+                btn.style.opacity = '0.65';
+                btn.innerHTML = `Change`;
+            } else {
+                btn.classList.remove('placed');
+                btn.classList.remove('ocr-slot-alternative');
+                btn.style.opacity = '1';
+                btn.innerHTML = `+ Add to Timetable`;
+            }
+        }
+    });
 }
 
 // Backwards compatibility alias
@@ -1314,9 +1379,17 @@ async function uploadScreenshot() {
         const courses = data.courses || [];
         const detectedSlots = data.detectedSlots || [];
 
+        let totalOfferings = 0;
+        courses.forEach(c => {
+            totalOfferings += (c.offerings && c.offerings.length)
+                ? c.offerings.length
+                : (c.slots ? c.slots.length : 0);
+        });
+        if (totalOfferings === 0) totalOfferings = detectedSlots.length;
+
         status.className = 'ocr-status success';
         status.style.display = 'flex';
-        status.innerHTML = `<span>✓ Screenshot read successfully! Detected ${courses.length} courses and ${detectedSlots.length} slot options.</span>`;
+        status.innerHTML = `<span>✓ Screenshot read successfully! Detected ${courses.length} course${courses.length === 1 ? '' : 's'} and ${totalOfferings} slot option${totalOfferings === 1 ? '' : 's'}.</span>`;
 
         if (preview) {
             preview.style.display = 'block';
@@ -1325,32 +1398,75 @@ async function uploadScreenshot() {
             if (courses.length > 0) {
                 previewHtml += `
                     <div style="font-weight:600; font-size:13px; margin-bottom:10px; color:#1e293b;">
-                        Detected Courses (${courses.length}) — Click slot to add directly:
+                        Detected Courses (${courses.length}) — Click slot according to faculty to add directly:
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+                    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px;">
                 `;
 
                 courses.forEach((c) => {
                     const code = c.code || 'COURSE';
                     const name = c.name || code;
-                    const slots = c.slots || [];
+                    const comp = c.component || '';
+                    const offerings = (c.offerings && c.offerings.length > 0)
+                        ? c.offerings
+                        : ((c.theorySlots && c.theorySlots.length > 0)
+                            ? [...c.theorySlots, ...(c.labSlots || [])]
+                            : (c.slots || []).map(s => ({ slot: s, faculty: 'TBA', venue: 'TBA', mode: 'CBL' })));
+
+                    const isAnyPlacedForCourse = selectedCourses.some(
+                        sc => (code && sc.code === code) || sc.name.toLowerCase() === name.toLowerCase()
+                    );
+
                     previewHtml += `
-                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                <span class="ocr-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${escapeHtml(code)}</span>
-                                <span style="font-weight:600; font-size:13px; color:#0f172a;">${escapeHtml(name)}</span>
+                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                    <span class="ocr-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${escapeHtml(code)}</span>
+                                    <span style="font-weight:600; font-size:13px; color:#0f172a;">${escapeHtml(name)}</span>
+                                    ${comp ? `<span class="ocr-badge" style="background:#f1f5f9; color:#475569; font-size:11px;">${escapeHtml(comp)}</span>` : ''}
+                                </div>
+                                <span style="font-size:11px; font-weight:600; color:#64748b;">${offerings.length} Option${offerings.length !== 1 ? 's' : ''}</span>
                             </div>
-                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                                ${slots.map(s => {
-                                    const key = `SS_${code}_${s}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    return `
-                                        <button class="ocr-add-slot-btn ${isPlaced ? 'placed' : ''}"
-                                                onclick="toggleScreenshotSlot('${escapeHtml(s)}', '${escapeHtml(code)}', '${escapeHtml(name)}', this)">
-                                            ${isPlaced ? '✓ ' + escapeHtml(s) + ' Added' : '➕ ' + escapeHtml(s)}
-                                        </button>
-                                    `;
-                                }).join('')}
+
+                            <div class="ocr-slots-table-wrap">
+                                <table class="ocr-slots-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Slot</th>
+                                            <th>Faculty</th>
+                                            <th>Venue</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${offerings.map(offering => {
+                                            const s = offering.slot;
+                                            const fac = offering.faculty || 'TBA';
+                                            const ven = offering.venue || 'TBA';
+                                            const facKey = fac.trim().toLowerCase();
+                                            const key = `SS_${code}_${s}_${facKey}`;
+                                            const isPlaced = placedOcrSlots.has(key);
+                                            return `
+                                                <tr>
+                                                    <td><span class="ocr-slot-pill">${escapeHtml(s)}</span></td>
+                                                    <td style="font-weight:600; color:#0f172a;">${escapeHtml(fac)}</td>
+                                                    <td style="color:#64748b;"><span style="background:#f8fafc; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid #e2e8f0;">${escapeHtml(ven)}</span></td>
+                                                    <td>
+                                                        <button class="ocr-add-slot-btn ${isPlaced ? 'placed' : (isAnyPlacedForCourse ? 'ocr-slot-alternative' : '')}"
+                                                                data-course-code="${escapeHtml(code)}"
+                                                                data-course-name="${escapeHtml(name)}"
+                                                                data-slot="${escapeHtml(s)}"
+                                                                data-faculty="${escapeHtml(fac)}"
+                                                                style="${!isPlaced && isAnyPlacedForCourse ? 'opacity:0.65;' : ''}"
+                                                                onclick="toggleScreenshotSlot('${escapeHtml(s)}', '${escapeHtml(code)}', '${escapeHtml(name)}', '${escapeHtml(fac)}', '${escapeHtml(ven)}', this)">
+                                                            ${isPlaced ? '✓ Added' : (isAnyPlacedForCourse ? 'Change' : '+ Add to Timetable')}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     `;
@@ -1364,11 +1480,14 @@ async function uploadScreenshot() {
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
                         ${detectedSlots.map(slot => {
-                            const key = `SS_CUSTOM_${slot}`;
+                            const key = `SS_CUSTOM_${slot}_`;
                             const isPlaced = placedOcrSlots.has(key);
                             return `
                                 <button class="ocr-add-slot-btn ${isPlaced ? 'placed' : ''}"
-                                        onclick="toggleScreenshotSlot('${escapeHtml(slot)}', '', 'Course (${escapeHtml(slot)})', this)">
+                                        data-course-code=""
+                                        data-slot="${escapeHtml(slot)}"
+                                        data-faculty=""
+                                        onclick="toggleScreenshotSlot('${escapeHtml(slot)}', '', 'Course (${escapeHtml(slot)})', '', '', this)">
                                     ${isPlaced ? '✓ ' + escapeHtml(slot) + ' Added' : '➕ ' + escapeHtml(slot)}
                                 </button>
                             `;

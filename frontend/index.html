@@ -68,19 +68,6 @@
                     </div>
 
                     <div class="ocr-status" id="ocrStatus"></div>
-
-                    <!-- Available Courses Container -->
-                    <div class="ocr-results-section" id="ocrResultsSection">
-                        <div class="ocr-results-header">
-                            <h3>
-                                <span>Available Courses</span>
-                                <span class="credit-badge" id="ocrCourseCount">0 Courses</span>
-                            </h3>
-                            <input type="text" class="ocr-search-input" id="ocrCourseSearch"
-                                placeholder="Filter by course code or title..." oninput="filterOcrCourses()">
-                        </div>
-                        <div class="ocr-courses-grid" id="ocrCoursesGrid"></div>
-                    </div>
                 </div>
 
                 <!-- Tab 2: Screenshot Upload -->
@@ -94,6 +81,19 @@
                         <div class="ocr-status" id="screenshotStatus"></div>
                         <div id="screenshotPreview" style="margin-top:14px; display:none;"></div>
                     </div>
+                </div>
+
+                <!-- Available Courses Container (Shared by both PDF and Screenshot uploads) -->
+                <div class="ocr-results-section" id="ocrResultsSection">
+                    <div class="ocr-results-header">
+                        <h3>
+                            <span>Available Courses</span>
+                            <span class="credit-badge" id="ocrCourseCount">0 Courses</span>
+                        </h3>
+                        <input type="text" class="ocr-search-input" id="ocrCourseSearch"
+                            placeholder="Filter by course code or title..." oninput="filterOcrCourses()">
+                    </div>
+                    <div class="ocr-courses-grid" id="ocrCoursesGrid"></div>
                 </div>
             </div>
         </section>

@@ -1141,6 +1141,16 @@ function removeCourse(courseId) {
   updateStats();
   hideClashAlert();
 
+  for (const [key, id] of placedOcrSlots.entries()) {
+    if (id === courseId) {
+      placedOcrSlots.delete(key);
+    }
+  }
+
+  if (typeof refreshOcrCourseButtons === "function") {
+    refreshOcrCourseButtons(course.code);
+  }
+
   console.log(`🗑️ Course removed: ${course.name}`);
 }
 
@@ -1159,7 +1169,7 @@ function updateSelectedCoursesList() {
         <div class="course-item ${course.type === "lab" ? "lab" : `credit-${course.credits}`}">
             <div>
                 <strong>${course.name}</strong><br>
-                <small>${course.slot} (${course.type === "lab" ? "LAB" : course.credits + "C"} ${course.type})</small>
+                <small>${course.slot} (${course.type === "lab" ? "LAB" : course.credits + "C"} ${course.type})${course.faculty && course.faculty !== "TBA" ? " • " + escapeHtml(course.faculty) : ""}${course.venue && course.venue !== "TBA" ? " • " + escapeHtml(course.venue) : ""}</small>
             </div>
             <button class="btn btn-danger" onclick="removeCourse(${course.id})" style="padding: 6px 12px; font-size: 11px; width: auto;">
                 Remove
@@ -1500,6 +1510,12 @@ function renderOcrCourses(courses) {
       const theorySlots = course.theorySlots || [];
       const labSlots = course.labSlots || [];
 
+      const isAnyPlacedForCourse = selectedCourses.some(
+        (sc) =>
+          (code && code !== "N/A" && sc.code === code) ||
+          (sc.name && sc.name.toLowerCase().startsWith(name.toLowerCase())),
+      );
+
       let theoryHtml = "";
       if (theorySlots.length > 0) {
         theoryHtml = `
@@ -1521,20 +1537,31 @@ function renderOcrCourses(courses) {
                                     const slotCode = escapeHtml(s.slot);
                                     const fac = escapeHtml(s.faculty || "TBA");
                                     const ven = escapeHtml(s.venue || "TBA");
-                                    const key = `${code}_${slotCode}`;
+                                    const facKey = (s.faculty || "").trim().toLowerCase();
+                                    const key = `OCR_${code}_${slotCode}_${facKey}`;
                                     const isPlaced = placedOcrSlots.has(key);
+                                    const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isAnyPlacedForCourse ? "ocr-slot-alternative" : "")}`;
+                                    const btnText = isPlaced
+                                      ? "✓ Added"
+                                      : (isAnyPlacedForCourse ? "Change" : "+ Add to Timetable");
+                                    const btnStyle = !isPlaced && isAnyPlacedForCourse ? "opacity:0.65;" : "";
                                     return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
-                                            <td>${fac}</td>
-                                            <td>${ven}</td>
+                                            <td style="font-weight:600; color:#0f172a;">${fac}</td>
+                                            <td style="color:#64748b;">${ven}</td>
                                             <td>
-                                                <button class="ocr-add-slot-btn ${isPlaced ? "placed" : ""}"
+                                                <button class="${btnClass}"
                                                     data-course-idx="${cIdx}"
                                                     data-slot-idx="${sIdx}"
                                                     data-slot-type="theory"
+                                                    data-course-code="${code}"
+                                                    data-course-name="${name}"
+                                                    data-slot="${slotCode}"
+                                                    data-faculty="${fac}"
+                                                    style="${btnStyle}"
                                                     onclick="toggleOcrSlot(${cIdx}, ${sIdx}, 'theory', this)">
-                                                    ${isPlaced ? "✓ Added" : "+ Add to Timetable"}
+                                                    ${btnText}
                                                 </button>
                                             </td>
                                         </tr>
@@ -1569,20 +1596,31 @@ function renderOcrCourses(courses) {
                                     const slotCode = escapeHtml(s.slot);
                                     const fac = escapeHtml(s.faculty || "TBA");
                                     const ven = escapeHtml(s.venue || "TBA");
-                                    const key = `${code}_${slotCode}`;
+                                    const facKey = (s.faculty || "").trim().toLowerCase();
+                                    const key = `OCR_${code}_${slotCode}_${facKey}`;
                                     const isPlaced = placedOcrSlots.has(key);
+                                    const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isAnyPlacedForCourse ? "ocr-slot-alternative" : "")}`;
+                                    const btnText = isPlaced
+                                      ? "✓ Added"
+                                      : (isAnyPlacedForCourse ? "Change" : "+ Add to Timetable");
+                                    const btnStyle = !isPlaced && isAnyPlacedForCourse ? "opacity:0.65;" : "";
                                     return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
-                                            <td>${fac}</td>
-                                            <td>${ven}</td>
+                                            <td style="font-weight:600; color:#0f172a;">${fac}</td>
+                                            <td style="color:#64748b;">${ven}</td>
                                             <td>
-                                                <button class="ocr-add-slot-btn ${isPlaced ? "placed" : ""}"
+                                                <button class="${btnClass}"
                                                     data-course-idx="${cIdx}"
                                                     data-slot-idx="${sIdx}"
                                                     data-slot-type="lab"
+                                                    data-course-code="${code}"
+                                                    data-course-name="${name}"
+                                                    data-slot="${slotCode}"
+                                                    data-faculty="${fac}"
+                                                    style="${btnStyle}"
                                                     onclick="toggleOcrSlot(${cIdx}, ${sIdx}, 'lab', this)">
-                                                    ${isPlaced ? "✓ Added" : "+ Add to Timetable"}
+                                                    ${btnText}
                                                 </button>
                                             </td>
                                         </tr>
@@ -1600,7 +1638,7 @@ function renderOcrCourses(courses) {
             <div class="ocr-course-card">
                 <div class="ocr-card-top">
                     <div>
-                        <span class="ocr-course-code">${code}</span>
+                        ${code && code !== "N/A" ? `<span class="ocr-course-code">${code}</span>` : ""}
                         <div class="ocr-course-title">${name}</div>
                     </div>
                 </div>
@@ -1628,26 +1666,41 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
       : course.labSlots[slotIdx];
   if (!slotObj) return;
 
-  const courseCode = course.code || "COURSE";
-  const courseName = `${course.name || courseCode} (${courseCode})`;
+  const courseCode = course.code && course.code !== "N/A" ? course.code : "";
+  const courseTitle = course.name || courseCode || "Course";
   const slotStr = slotObj.slot;
-  const key = `${courseCode}_${slotStr}`;
+  const fac = slotObj.faculty || "TBA";
+  const ven = slotObj.venue || "TBA";
+  const facKey = fac.trim().toLowerCase();
+  const key = `OCR_${courseCode || "COURSE"}_${slotStr}_${facKey}`;
 
-  // If already placed, remove it
+  // 1. If this exact slot + faculty is already placed, toggle off (remove)
   if (placedOcrSlots.has(key)) {
     const existingId = placedOcrSlots.get(key);
     removeCourse(existingId);
     placedOcrSlots.delete(key);
-    if (btnEl) {
-      btnEl.classList.remove("placed");
-      btnEl.innerHTML = "+ Add to Timetable";
-    }
-    showToast(`Removed ${courseName} (${slotStr}) from timetable`, "info");
+    refreshOcrCourseButtons(courseCode);
+    showToast(`Removed ${courseTitle} [${slotStr}] from timetable`, "info");
     return;
   }
 
-  // Split compound slots (e.g. "B1" or "A1+TA1" or "L1+L2")
-  const slots = slotStr.split("+").map((s) => s.trim());
+  // 2. If another option for this same course was already placed, switch (remove previous selection)
+  const prevCourse = selectedCourses.find(
+    (c) =>
+      (courseCode && c.code === courseCode) ||
+      (c.name && c.name.toLowerCase().startsWith(courseTitle.toLowerCase())),
+  );
+  if (prevCourse) {
+    removeCourse(prevCourse.id);
+    for (const [k, id] of placedOcrSlots.entries()) {
+      if (id === prevCourse.id) {
+        placedOcrSlots.delete(k);
+      }
+    }
+  }
+
+  // 3. Split compound slots (e.g. "B1" or "A1+TA1" or "F1+TF1" or "L1+L2")
+  const slots = slotStr.split("+").map((s) => s.trim().toUpperCase());
 
   // Validate slots exist in slotMappings
   const unmapped = slots.filter((s) => !slotMappings[s]);
@@ -1658,18 +1711,19 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
     );
   }
 
-  // Check for clashes
-  const clashes = checkForClashes(slots, slotType, courseName);
+  // 4. Check for clashes
+  const clashes = checkForClashes(slots, slotType, courseTitle);
   if (clashes.length > 0) {
-    showClashAlert(clashes, courseName, slotStr, slotType);
+    showClashAlert(clashes, courseTitle, slotStr, slotType);
     showToast(
-      `Clash detected for ${courseName} (${slotStr})! Check the alert above.`,
+      `Clash detected for ${courseTitle} (${slotStr})! Check the alert above.`,
       "error",
     );
+    refreshOcrCourseButtons(courseCode);
     return;
   }
 
-  // Calculate credits
+  // 5. Calculate credits
   let credits =
     slotType === "lab" ? 1 : Math.round(parseFloat(course.credit || 3));
   if (credits < 1) credits = 1;
@@ -1677,14 +1731,14 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
 
   const courseItem = {
     id: Date.now() + Math.floor(Math.random() * 1000),
-    name: courseName,
+    name: courseTitle,
     code: courseCode,
     slot: slotStr,
     type: slotType,
     credits: credits,
     slots: slots,
-    faculty: slotObj.faculty || "",
-    venue: slotObj.venue || "",
+    faculty: fac && fac !== "TBA" ? fac : "",
+    venue: ven && ven !== "TBA" ? ven : "",
   };
 
   selectedCourses.push(courseItem);
@@ -1694,97 +1748,60 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
   hideClashAlert();
 
   placedOcrSlots.set(key, courseItem.id);
-  if (btnEl) {
-    btnEl.classList.add("placed");
-    btnEl.innerHTML = "✓ Added";
-  }
+  refreshOcrCourseButtons(courseCode);
 
-  showToast(`✓ Added ${courseName} [${slotStr}] to timetable!`, "success");
+  showToast(
+    `✓ Added ${courseTitle} [${slotStr}]${fac && fac !== "TBA" ? ` (${fac})` : ""} to timetable!`,
+    "success",
+  );
 }
 
-// 1-Click Toggle Screenshot slot into timetable
-function toggleScreenshotSlot(
-  slotStr,
-  courseCode = "",
-  courseTitle = "",
-  btnEl = null,
-) {
-  if (!slotStr) return;
-  const compoundSlots = slotStr.split("+").map((s) => s.trim().toUpperCase());
-  const isLab = compoundSlots.some((s) => s.startsWith("L"));
-  const slotType = isLab ? "lab" : "theory";
-  const code = courseCode || "CUSTOM";
-  const title =
-    courseTitle || (courseCode ? courseCode : `Course (${slotStr})`);
-  const key = `SS_${code}_${slotStr}`;
+function refreshOcrCourseButtons(courseCode) {
+  const grid = document.getElementById("ocrCoursesGrid");
+  if (!grid) return;
 
-  // If already placed, remove it
-  if (placedOcrSlots.has(key)) {
-    const existingId = placedOcrSlots.get(key);
-    removeCourse(existingId);
-    placedOcrSlots.delete(key);
-    if (btnEl) {
-      btnEl.classList.remove("placed");
-      btnEl.innerHTML = `➕ ${escapeHtml(slotStr)}`;
+  const buttons = grid.querySelectorAll(".ocr-add-slot-btn");
+  buttons.forEach((btn) => {
+    const btnCode = btn.getAttribute("data-course-code");
+    const btnSlot = btn.getAttribute("data-slot");
+    const btnFac = btn.getAttribute("data-faculty") || "";
+    const btnCourseName = btn.getAttribute("data-course-name") || "";
+    if (!btnSlot) return;
+
+    if (
+      !courseCode ||
+      btnCode === courseCode ||
+      (btnCourseName &&
+        courseCode.toLowerCase() === btnCourseName.toLowerCase())
+    ) {
+      const facKey = btnFac.trim().toLowerCase();
+      const thisKey = `OCR_${btnCode || "COURSE"}_${btnSlot}_${facKey}`;
+      const isPlaced = placedOcrSlots.has(thisKey);
+      const anyPlacedForCourse = selectedCourses.some(
+        (c) =>
+          (btnCode && btnCode !== "N/A" && c.code === btnCode) ||
+          (c.name &&
+            c.name.toLowerCase().startsWith(btnCourseName.toLowerCase())),
+      );
+
+      if (isPlaced) {
+        btn.classList.add("placed");
+        btn.classList.remove("ocr-slot-alternative");
+        btn.style.opacity = "1";
+        btn.innerHTML = `✓ Added`;
+      } else if (anyPlacedForCourse) {
+        btn.classList.remove("placed");
+        btn.classList.add("ocr-slot-alternative");
+        btn.style.opacity = "0.65";
+        btn.innerHTML = `Change`;
+      } else {
+        btn.classList.remove("placed");
+        btn.classList.remove("ocr-slot-alternative");
+        btn.style.opacity = "1";
+        btn.innerHTML = `+ Add to Timetable`;
+      }
     }
-    showToast(`Removed ${title} [${slotStr}] from timetable`, "info");
-    return;
-  }
-
-  // Validate against slot mappings
-  const unmapped = compoundSlots.filter((s) => !slotMappings[s]);
-  if (unmapped.length > 0) {
-    showToast(
-      `Warning: Slot "${unmapped.join(", ")}" is not defined in timetable mappings.`,
-      "warning",
-    );
-  }
-
-  // Check for timetable clashes
-  const clashes = checkForClashes(compoundSlots, slotType, title);
-  if (clashes.length > 0) {
-    showClashAlert(clashes, title, slotStr, slotType);
-    showToast(
-      `Clash detected for ${title} (${slotStr})! Check the clash alert above.`,
-      "error",
-    );
-    return;
-  }
-
-  // Calculate credits
-  let credits = isLab
-    ? 1
-    : compoundSlots.length >= 3
-      ? 4
-      : compoundSlots.length === 2
-        ? 3
-        : 2;
-
-  const courseItem = {
-    id: Date.now() + Math.floor(Math.random() * 1000),
-    name: title,
-    code: code,
-    slot: slotStr,
-    type: slotType,
-    credits: credits,
-    slots: compoundSlots,
-    faculty: "",
-    venue: "",
-  };
-
-  selectedCourses.push(courseItem);
-  updateTimetable(courseItem);
-  updateSelectedCoursesList();
-  updateStats();
-  hideClashAlert();
-
-  placedOcrSlots.set(key, courseItem.id);
-  if (btnEl) {
-    btnEl.classList.add("placed");
-    btnEl.innerHTML = `✓ ${escapeHtml(slotStr)} Added`;
-  }
-
-  showToast(`✓ Added ${title} [${slotStr}] to timetable!`, "success");
+  });
 }
 
 // Backwards compatibility alias
@@ -1823,98 +1840,100 @@ async function uploadScreenshot() {
       throw new Error(data.error || "Failed to process image");
     }
 
-    const courses = data.courses || [];
-    const detectedSlots = data.detectedSlots || [];
+    const detectedCourses = data.courses || [];
+    let totalOptions = 0;
 
-    status.className = "ocr-status success";
-    status.style.display = "flex";
-    status.innerHTML = `<span>✓ Screenshot read successfully! Detected ${courses.length} courses and ${detectedSlots.length} slot options.</span>`;
+    if (detectedCourses.length > 0) {
+      detectedCourses.forEach((sc) => {
+        const normTheory =
+          sc.theorySlots && sc.theorySlots.length > 0
+            ? sc.theorySlots
+            : sc.offerings && sc.offerings.length > 0
+              ? sc.offerings.filter((o) => o.type !== "lab")
+              : (sc.slots || []).map((s) => ({
+                  slot: s,
+                  faculty: "TBA",
+                  venue: "TBA",
+                  mode: "CBL",
+                }));
 
-    if (preview) {
-      preview.style.display = "block";
-      let previewHtml = "";
+        const normLab =
+          sc.labSlots && sc.labSlots.length > 0
+            ? sc.labSlots
+            : sc.offerings && sc.offerings.length > 0
+              ? sc.offerings.filter((o) => o.type === "lab")
+              : [];
 
-      if (courses.length > 0) {
-        previewHtml += `
-                    <div style="font-weight:600; font-size:13px; margin-bottom:10px; color:#1e293b;">
-                        Detected Courses (${courses.length}) — Click slot to add directly:
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
-                `;
+        totalOptions += normTheory.length + normLab.length;
 
-        courses.forEach((c) => {
-          const code = c.code || "COURSE";
-          const name = c.name || code;
-          const slots = c.slots || [];
-          previewHtml += `
-                        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                <span class="ocr-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">${escapeHtml(code)}</span>
-                                <span style="font-weight:600; font-size:13px; color:#0f172a;">${escapeHtml(name)}</span>
-                            </div>
-                            <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                                ${slots
-                                  .map((s) => {
-                                    const key = `SS_${code}_${s}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    return `
-                                        <button class="ocr-add-slot-btn ${isPlaced ? "placed" : ""}"
-                                                onclick="toggleScreenshotSlot('${escapeHtml(s)}', '${escapeHtml(code)}', '${escapeHtml(name)}', this)">
-                                            ${isPlaced ? "✓ " + escapeHtml(s) + " Added" : "➕ " + escapeHtml(s)}
-                                        </button>
-                                    `;
-                                  })
-                                  .join("")}
-                            </div>
-                        </div>
-                    `;
-        });
+        const newCourse = {
+          code: sc.code || "",
+          name: sc.name || sc.code || "Course",
+          component: sc.component || "Theory",
+          credit: sc.credit || 3,
+          theorySlots: normTheory,
+          labSlots: normLab,
+        };
 
-        previewHtml += `</div>`;
-      } else if (detectedSlots.length > 0) {
-        previewHtml += `
-                    <div style="font-weight:600; font-size:13px; margin-bottom:8px; color:#1e293b;">
-                        Detected Slots (${detectedSlots.length}) — Click to add:
-                    </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
-                        ${detectedSlots
-                          .map((slot) => {
-                            const key = `SS_CUSTOM_${slot}`;
-                            const isPlaced = placedOcrSlots.has(key);
-                            return `
-                                <button class="ocr-add-slot-btn ${isPlaced ? "placed" : ""}"
-                                        onclick="toggleScreenshotSlot('${escapeHtml(slot)}', '', 'Course (${escapeHtml(slot)})', this)">
-                                    ${isPlaced ? "✓ " + escapeHtml(slot) + " Added" : "➕ " + escapeHtml(slot)}
-                                </button>
-                            `;
-                          })
-                          .join("")}
-                    </div>
-                `;
-      } else {
-        previewHtml += `
-                    <div style="padding:10px; background:#fff; border-radius:6px; font-size:13px; color:#64748b; border:1px dashed #cbd5e1; margin-bottom:10px;">
-                        No courses or slot patterns found in this screenshot. Please verify image clarity.
-                    </div>
-                `;
+        const existingIdx = ocrImportedCourses.findIndex(
+          (c) =>
+            c.code &&
+            newCourse.code &&
+            c.code.toUpperCase() === newCourse.code.toUpperCase(),
+        );
+        if (existingIdx !== -1) {
+          ocrImportedCourses[existingIdx] = newCourse;
+        } else {
+          ocrImportedCourses.unshift(newCourse);
+        }
+      });
+
+      handleOcrResults(ocrImportedCourses);
+
+      status.className = "ocr-status success";
+      status.style.display = "flex";
+      status.innerHTML = `<span>✓ Screenshot read successfully! Loaded ${detectedCourses.length} course${detectedCourses.length === 1 ? "" : "s"} and ${totalOptions} slot option${totalOptions === 1 ? "" : "s"} into Available Courses below.</span>`;
+
+      if (preview) {
+        preview.style.display = "block";
+        if (data.rawText) {
+          preview.innerHTML = `
+            <details style="margin-top:8px; font-size:12px; color:#64748b;">
+                <summary style="cursor:pointer; font-weight:600; user-select:none;">
+                    View Extracted Raw Text (${data.lines ? data.lines.length : 0} lines)
+                </summary>
+                <pre style="background:#f1f5f9; padding:8px 12px; border-radius:6px; margin-top:6px; white-space:pre-wrap; max-height:160px; overflow-y:auto; font-family:var(--font-mono); font-size:11px; line-height:1.4; border:1px solid #e2e8f0;">${escapeHtml(data.rawText)}</pre>
+            </details>
+          `;
+        } else {
+          preview.innerHTML = "";
+        }
       }
 
-      // Raw OCR preview collapsible
-      if (data.rawText) {
-        previewHtml += `
-                    <details style="margin-top:10px; font-size:12px; color:#64748b;">
-                        <summary style="cursor:pointer; font-weight:600; user-select:none;">
-                            View Extracted Raw Text (${data.lines ? data.lines.length : 0} lines)
-                        </summary>
-                        <pre style="background:#f1f5f9; padding:8px 12px; border-radius:6px; margin-top:6px; white-space:pre-wrap; max-height:160px; overflow-y:auto; font-family:var(--font-mono); font-size:11px; line-height:1.4; border:1px solid #e2e8f0;">${escapeHtml(data.rawText)}</pre>
-                    </details>
-                `;
+      // Smooth scroll to the results section so the user sees the cards immediately
+      const resultsSec = document.getElementById("ocrResultsSection");
+      if (resultsSec) {
+        resultsSec.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
 
-      preview.innerHTML = previewHtml;
+      showToast("Screenshot courses added to Available Courses!", "success");
+    } else {
+      status.className = "ocr-status error";
+      status.style.display = "flex";
+      status.innerHTML =
+        "<span>No courses or slots detected in screenshot.</span>";
+      if (preview && data.rawText) {
+        preview.style.display = "block";
+        preview.innerHTML = `
+          <details style="margin-top:8px; font-size:12px; color:#64748b;">
+              <summary style="cursor:pointer; font-weight:600; user-select:none;">
+                  View Extracted Raw Text (${data.lines ? data.lines.length : 0} lines)
+              </summary>
+              <pre style="background:#f1f5f9; padding:8px 12px; border-radius:6px; margin-top:6px; white-space:pre-wrap; max-height:160px; overflow-y:auto; font-family:var(--font-mono); font-size:11px; line-height:1.4; border:1px solid #e2e8f0;">${escapeHtml(data.rawText)}</pre>
+          </details>
+        `;
+      }
     }
-
-    showToast("Screenshot read successfully!", "success");
   } catch (err) {
     console.error("Screenshot upload error:", err);
     status.className = "ocr-status error";
