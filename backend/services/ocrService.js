@@ -2,7 +2,12 @@ const path = require("path");
 const sharp = require("sharp");
 const { createWorker } = require("tesseract.js");
 
-const LANG_PATH = path.resolve(__dirname, "..");
+// On Vercel (read-only filesystem) use CDN; locally use the bundled traineddata.
+// Tesseract.js v5 accepts a URL as langPath and will fetch from CDN if needed.
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined;
+const LANG_PATH = IS_VERCEL
+    ? 'https://tessdata.projectnaptha.com/4.0.0'
+    : path.resolve(__dirname, "..");
 
 /**
  * Scale image up if it is small or low DPI, for optimal Tesseract recognition
@@ -87,7 +92,7 @@ function textHasCourseSignals(text) {
 async function extractTextFromImage(inputBuffer) {
   const worker = await createWorker("eng", 1, {
     langPath: LANG_PATH,
-    cachePath: LANG_PATH,
+    ...(IS_VERCEL ? {} : { cachePath: LANG_PATH }),
   });
 
   try {

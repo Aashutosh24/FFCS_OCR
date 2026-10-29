@@ -1,0 +1,9 @@
+backend/node_modules
+backend/eng.traineddata
+course_ocr
+*.pyc
+__pycache__
+node_modules
+eng.traineddata
+.git
+

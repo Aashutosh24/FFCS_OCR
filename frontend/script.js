@@ -1986,3 +1986,106 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIMETABLE PERSISTENCE — Browser localStorage
+// The timetable you build is saved automatically and restored on next visit.
+// Nothing is stored on any server. All data stays in YOUR browser.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TT_CACHE_KEY = 'ffcs_timetable_state';
+
+function saveTimetableState() {
+    try {
+        const state = {
+            selectedCourses,
+            savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(TT_CACHE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.warn('Could not save timetable state:', e);
+    }
+}
+
+function restoreTimetableState() {
+    try {
+        const raw = localStorage.getItem(TT_CACHE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (!state || !Array.isArray(state.selectedCourses) || state.selectedCourses.length === 0) return;
+
+        // Re-add each course back to the timetable
+        state.selectedCourses.forEach(course => {
+            selectedCourses.push(course);
+            updateTimetable(course);
+        });
+        updateSelectedCoursesList();
+        updateStats();
+        console.log(`✅ Restored ${state.selectedCourses.length} courses from browser cache (saved ${state.savedAt})`);
+    } catch (e) {
+        console.warn('Could not restore timetable state:', e);
+    }
+}
+
+// Patch the key mutation functions to auto-save after every change
+(function patchAutoSave() {
+    // Wait until DOM is ready and original functions are defined
+    document.addEventListener('DOMContentLoaded', () => {
+        // Restore saved timetable
+        restoreTimetableState();
+
+        // Patch addTheoryCourse
+        const _origAddTheory = window.addTheoryCourse;
+        if (typeof _origAddTheory === 'function') {
+            window.addTheoryCourse = function (...args) {
+                _origAddTheory.apply(this, args);
+                saveTimetableState();
+            };
+        }
+
+        // Patch addLabCourse
+        const _origAddLab = window.addLabCourse;
+        if (typeof _origAddLab === 'function') {
+            window.addLabCourse = function (...args) {
+                _origAddLab.apply(this, args);
+                saveTimetableState();
+            };
+        }
+
+        // Patch removeCourse
+        const _origRemove = window.removeCourse;
+        if (typeof _origRemove === 'function') {
+            window.removeCourse = function (...args) {
+                _origRemove.apply(this, args);
+                saveTimetableState();
+            };
+        }
+
+        // Patch clearAll
+        const _origClear = window.clearAll;
+        if (typeof _origClear === 'function') {
+            window.clearAll = function (...args) {
+                _origClear.apply(this, args);
+                try { localStorage.removeItem(TT_CACHE_KEY); } catch (e) {}
+            };
+        }
+
+        // Patch toggleOcrSlot (if available in app.js)
+        const _origToggleOcr = window.toggleOcrSlot;
+        if (typeof _origToggleOcr === 'function') {
+            window.toggleOcrSlot = function (...args) {
+                _origToggleOcr.apply(this, args);
+                saveTimetableState();
+            };
+        }
+
+        // Patch toggleScreenshotSlot
+        const _origToggleSS = window.toggleScreenshotSlot;
+        if (typeof _origToggleSS === 'function') {
+            window.toggleScreenshotSlot = function (...args) {
+                _origToggleSS.apply(this, args);
+                saveTimetableState();
+            };
+        }
+    });
+})();
