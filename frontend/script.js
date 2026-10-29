@@ -784,7 +784,7 @@ function addTheoryCourse() {
   updateStats();
   clearTheoryInputs();
   hideClashAlert();
-  showToast(`✓ Added theory course: ${courseName} (${selectedSlot.slot})`, "success");
+  showToast(`Added theory course: ${courseName} (${selectedSlot.slot})`, "success");
 
   console.log(
     `✅ Course ${existingCourse ? "updated" : "added"}: ${courseName} with ${slots.length} slots`,
@@ -869,7 +869,7 @@ function addLabCourse() {
   updateStats();
   clearLabInputs();
   hideClashAlert();
-  showToast(`✓ Added lab course: ${courseName} (${currentLabSlot})`, "success");
+  showToast(`Added lab course: ${courseName} (${currentLabSlot})`, "success");
 
   console.log(
     `✅ Lab course ${existingCourse ? "updated" : "added"}: ${courseName}`,
@@ -1507,9 +1507,11 @@ function renderOcrCourses(courses) {
       const name = escapeHtml(course.name || "Unnamed Course");
       const comp = escapeHtml(course.component || "Theory");
       const credit = parseFloat(course.credit || 3);
-      const theorySlots = course.theorySlots || [];
-      const labSlots = course.labSlots || [];
+      const theorySlots = (course.theorySlots || []).filter(s => !/(?:UNIVERSITY|SEMESTER|REGISTRATION|VTOP)/i.test((s.faculty || '') + (s.venue || '') + (s.slot || ''))).map(s => ({ ...s, isLab: false }));
+      const labSlots = (course.labSlots || []).filter(s => !/(?:UNIVERSITY|SEMESTER|REGISTRATION|VTOP)/i.test((s.faculty || '') + (s.venue || '') + (s.slot || ''))).map(s => ({ ...s, isLab: true }));
 
+      const isAnyTheoryPlaced = selectedCourses.some((sc) => sc.type === "theory" && ((code && code !== "N/A" && sc.code === code) || (sc.name && sc.name.toLowerCase().startsWith(name.toLowerCase()))));
+      const isAnyLabPlaced = selectedCourses.some((sc) => sc.type === "lab" && ((code && code !== "N/A" && sc.code === code) || (sc.name && sc.name.toLowerCase().startsWith(name.toLowerCase()))));
       const isAnyPlacedForCourse = selectedCourses.some(
         (sc) =>
           (code && code !== "N/A" && sc.code === code) ||
@@ -1533,19 +1535,20 @@ function renderOcrCourses(courses) {
                             </thead>
                             <tbody>
                                 ${theorySlots
-                                  .map((s, sIdx) => {
-                                    const slotCode = escapeHtml(s.slot);
-                                    const fac = escapeHtml(s.faculty || "TBA");
-                                    const ven = escapeHtml(s.venue || "TBA");
-                                    const facKey = (s.faculty || "").trim().toLowerCase();
-                                    const key = `OCR_${code}_${slotCode}_${facKey}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isAnyPlacedForCourse ? "ocr-slot-alternative" : "")}`;
-                                    const btnText = isPlaced
-                                      ? "✓ Added"
-                                      : (isAnyPlacedForCourse ? "Change" : "+ Add to Timetable");
-                                    const btnStyle = !isPlaced && isAnyPlacedForCourse ? "opacity:0.65;" : "";
-                                    return `
+            .map((s, sIdx) => {
+              const slotCode = escapeHtml(s.slot);
+              const fac = escapeHtml(s.faculty || "TBA");
+              const ven = escapeHtml(s.venue || "TBA");
+              const facKey = (s.faculty || "").trim().toLowerCase();
+              const key = `OCR_${code}_${slotCode}_${facKey}`;
+              const isPlaced = placedOcrSlots.has(key);
+              const isTypePlaced = s.isLab ? isAnyLabPlaced : isAnyTheoryPlaced;
+              const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isTypePlaced ? "ocr-slot-alternative" : "")}`;
+              const btnText = isPlaced
+                ? "✓ Added"
+                : (isTypePlaced ? "Change" : "+ Add to Timetable");
+              const btnStyle = !isPlaced && isTypePlaced ? "opacity:0.65;" : "";
+              return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
                                             <td style="font-weight:600; color:#0f172a;">${fac}</td>
@@ -1566,8 +1569,8 @@ function renderOcrCourses(courses) {
                                             </td>
                                         </tr>
                                     `;
-                                  })
-                                  .join("")}
+            })
+            .join("")}
                             </tbody>
                         </table>
                     </div>
@@ -1592,19 +1595,20 @@ function renderOcrCourses(courses) {
                             </thead>
                             <tbody>
                                 ${labSlots
-                                  .map((s, sIdx) => {
-                                    const slotCode = escapeHtml(s.slot);
-                                    const fac = escapeHtml(s.faculty || "TBA");
-                                    const ven = escapeHtml(s.venue || "TBA");
-                                    const facKey = (s.faculty || "").trim().toLowerCase();
-                                    const key = `OCR_${code}_${slotCode}_${facKey}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isAnyPlacedForCourse ? "ocr-slot-alternative" : "")}`;
-                                    const btnText = isPlaced
-                                      ? "✓ Added"
-                                      : (isAnyPlacedForCourse ? "Change" : "+ Add to Timetable");
-                                    const btnStyle = !isPlaced && isAnyPlacedForCourse ? "opacity:0.65;" : "";
-                                    return `
+            .map((s, sIdx) => {
+              const slotCode = escapeHtml(s.slot);
+              const fac = escapeHtml(s.faculty || "TBA");
+              const ven = escapeHtml(s.venue || "TBA");
+              const facKey = (s.faculty || "").trim().toLowerCase();
+              const key = `OCR_${code}_${slotCode}_${facKey}`;
+              const isPlaced = placedOcrSlots.has(key);
+              const isTypePlaced = s.isLab ? isAnyLabPlaced : isAnyTheoryPlaced;
+              const btnClass = `ocr-add-slot-btn ${isPlaced ? "placed" : (isTypePlaced ? "ocr-slot-alternative" : "")}`;
+              const btnText = isPlaced
+                ? "✓ Added"
+                : (isTypePlaced ? "Change" : "+ Add to Timetable");
+              const btnStyle = !isPlaced && isTypePlaced ? "opacity:0.65;" : "";
+              return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
                                             <td style="font-weight:600; color:#0f172a;">${fac}</td>
@@ -1625,8 +1629,8 @@ function renderOcrCourses(courses) {
                                             </td>
                                         </tr>
                                     `;
-                                  })
-                                  .join("")}
+            })
+            .join("")}
                             </tbody>
                         </table>
                     </div>
@@ -1687,8 +1691,9 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
   // 2. If another option for this same course was already placed, switch (remove previous selection)
   const prevCourse = selectedCourses.find(
     (c) =>
-      (courseCode && c.code === courseCode) ||
-      (c.name && c.name.toLowerCase().startsWith(courseTitle.toLowerCase())),
+      c.type === slotType &&
+      ((courseCode && c.code === courseCode) ||
+        (c.name && c.name.toLowerCase().startsWith(courseTitle.toLowerCase()))),
   );
   if (prevCourse) {
     removeCourse(prevCourse.id);
@@ -1751,7 +1756,7 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
   refreshOcrCourseButtons(courseCode);
 
   showToast(
-    `✓ Added ${courseTitle} [${slotStr}]${fac && fac !== "TBA" ? ` (${fac})` : ""} to timetable!`,
+    `Added ${courseTitle} [${slotStr}]${fac && fac !== "TBA" ? ` (${fac})` : ""} to timetable!`,
     "success",
   );
 }
@@ -1777,11 +1782,13 @@ function refreshOcrCourseButtons(courseCode) {
       const facKey = btnFac.trim().toLowerCase();
       const thisKey = `OCR_${btnCode || "COURSE"}_${btnSlot}_${facKey}`;
       const isPlaced = placedOcrSlots.has(thisKey);
+      const btnType = btn.getAttribute("data-slot-type") || (/^L\d/i.test(btnSlot) ? "lab" : "theory");
       const anyPlacedForCourse = selectedCourses.some(
         (c) =>
-          (btnCode && btnCode !== "N/A" && c.code === btnCode) ||
-          (c.name &&
-            c.name.toLowerCase().startsWith(btnCourseName.toLowerCase())),
+          c.type === btnType &&
+          ((btnCode && btnCode !== "N/A" && c.code === btnCode) ||
+            (c.name &&
+              c.name.toLowerCase().startsWith(btnCourseName.toLowerCase()))),
       );
 
       if (isPlaced) {
@@ -1820,9 +1827,11 @@ async function uploadScreenshot() {
     return;
   }
 
-  const file = fileInput.files[0];
+  const files = fileInput.files;
   const formData = new FormData();
-  formData.append("image", file);
+  for (let i = 0; i < files.length; i++) {
+    formData.append("image", files[i]);
+  }
 
   status.className = "ocr-status info";
   status.style.display = "flex";
@@ -1851,11 +1860,11 @@ async function uploadScreenshot() {
             : sc.offerings && sc.offerings.length > 0
               ? sc.offerings.filter((o) => o.type !== "lab")
               : (sc.slots || []).map((s) => ({
-                  slot: s,
-                  faculty: "TBA",
-                  venue: "TBA",
-                  mode: "CBL",
-                }));
+                slot: s,
+                faculty: "TBA",
+                venue: "TBA",
+                mode: "CBL",
+              }));
 
         const normLab =
           sc.labSlots && sc.labSlots.length > 0
@@ -1948,33 +1957,131 @@ function printTimetable() {
   window.print();
 }
 
-// Beautiful toast notification helper
+// Modern Toast Notification System
 function showToast(message, type = "info") {
-  const existing = document.querySelector(".beautiful-alert");
-  if (existing) existing.remove();
+  // Strip duplicate leading checkmarks or emoji symbols
+  let cleanMessage = String(message || '').replace(/^[\s✓✔✅☑️⚠️ℹ️❌✗\-\:\.]+/u, '').trim();
 
-  const toast = document.createElement("div");
-  toast.className = `beautiful-alert ${type}`;
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
 
-  let icon = "ℹ️";
-  if (type === "success") icon = "✓";
-  if (type === "error") icon = "⚠️";
-  if (type === "warning") icon = "⚠️";
+  // Dismiss previous toast
+  const existing = container.querySelector('.beautiful-alert');
+  if (existing) {
+    existing.classList.remove('show');
+    existing.classList.add('hide');
+    setTimeout(() => existing.remove(), 200);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'beautiful-alert ' + type;
+
+  // Crisp SVG Icons
+  let iconSvg = '';
+  if (type === 'success') {
+    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+  } else if (type === 'error') {
+    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  } else if (type === 'warning') {
+    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  } else {
+    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  }
+
+  // Parse structured course message (e.g. "Added German for Beginners [A2] (VELMALA SHARATH KUMAR) to timetable!")
+  let formattedHtml = '';
+  const addMatch = cleanMessage.match(/^(?:Added\s+)?(.*?)\s*\[(.*?)\]\s*(?:\((.*?)\))?\s*(?:to\s+timetable!?)?$/i);
+  const removeMatch = cleanMessage.match(/^(?:Removed\s+)(.*?)\s*\[(.*?)\]\s*(?:from\s+timetable!?)?$/i);
+
+  if (addMatch && addMatch[1]) {
+    const course = addMatch[1].trim();
+    const slot = (addMatch[2] || '').trim();
+    const faculty = (addMatch[3] || '').trim();
+    formattedHtml = `
+      <div class="toast-header-row">
+        <span class="toast-badge-pill ${type}">Added to Timetable</span>
+      </div>
+      <div class="toast-course-name">${escapeHtml(course)}</div>
+      <div class="toast-meta-row">
+        ${slot ? `<span class="toast-slot-tag">${escapeHtml(slot)}</span>` : ''}
+        ${faculty && faculty !== 'TBA' ? `<span class="toast-faculty-tag">${escapeHtml(faculty)}</span>` : ''}
+      </div>
+    `;
+  } else if (removeMatch && removeMatch[1]) {
+    const course = removeMatch[1].trim();
+    const slot = (removeMatch[2] || '').trim();
+    formattedHtml = `
+      <div class="toast-header-row">
+        <span class="toast-badge-pill info">Removed</span>
+      </div>
+      <div class="toast-course-name">${escapeHtml(course)}</div>
+      ${slot ? `<div class="toast-meta-row"><span class="toast-slot-tag">${escapeHtml(slot)}</span></div>` : ''}
+    `;
+  } else {
+    formattedHtml = `
+      <div class="toast-body-text">${escapeHtml(cleanMessage)}</div>
+    `;
+  }
 
   toast.innerHTML = `
-        <div class="alert-content">
-            <span class="alert-icon">${icon}</span>
-            <span class="alert-message">${escapeHtml(message)}</span>
-            <button class="alert-close" onclick="this.closest('.beautiful-alert').remove()">&times;</button>
-        </div>
-    `;
+    <div class="alert-content">
+      <div class="toast-icon-wrapper ${type}">${iconSvg}</div>
+      <div class="alert-message-wrap">${formattedHtml}</div>
+      <button class="alert-close" aria-label="Dismiss" onclick="dismissToast(this.closest('.beautiful-alert'))">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="toast-progress-track">
+      <div class="toast-progress-bar ${type}"></div>
+    </div>
+  `;
 
-  document.body.appendChild(toast);
-  setTimeout(() => toast.classList.add("show"), 10);
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 400);
-  }, 4500);
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  let timeoutId;
+  let remainingMs = 4200;
+  let startTime = Date.now();
+
+  function startTimer(ms) {
+    timeoutId = setTimeout(() => {
+      dismissToast(toast);
+    }, ms);
+  }
+
+  toast.addEventListener('mouseenter', () => {
+    clearTimeout(timeoutId);
+    remainingMs -= (Date.now() - startTime);
+    const bar = toast.querySelector('.toast-progress-bar');
+    if (bar) bar.style.animationPlayState = 'paused';
+  });
+
+  toast.addEventListener('mouseleave', () => {
+    startTime = Date.now();
+    startTimer(Math.max(remainingMs, 800));
+    const bar = toast.querySelector('.toast-progress-bar');
+    if (bar) bar.style.animationPlayState = 'running';
+  });
+
+  startTimer(remainingMs);
+}
+
+function dismissToast(el) {
+  if (!el) return;
+  el.classList.remove('show');
+  el.classList.add('hide');
+  setTimeout(() => el.remove(), 260);
 }
 
 function escapeHtml(str) {
@@ -1996,96 +2103,96 @@ function escapeHtml(str) {
 const TT_CACHE_KEY = 'ffcs_timetable_state';
 
 function saveTimetableState() {
-    try {
-        const state = {
-            selectedCourses,
-            savedAt: new Date().toISOString()
-        };
-        localStorage.setItem(TT_CACHE_KEY, JSON.stringify(state));
-    } catch (e) {
-        console.warn('Could not save timetable state:', e);
-    }
+  try {
+    const state = {
+      selectedCourses,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(TT_CACHE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Could not save timetable state:', e);
+  }
 }
 
 function restoreTimetableState() {
-    try {
-        const raw = localStorage.getItem(TT_CACHE_KEY);
-        if (!raw) return;
-        const state = JSON.parse(raw);
-        if (!state || !Array.isArray(state.selectedCourses) || state.selectedCourses.length === 0) return;
+  try {
+    const raw = localStorage.getItem(TT_CACHE_KEY);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    if (!state || !Array.isArray(state.selectedCourses) || state.selectedCourses.length === 0) return;
 
-        // Re-add each course back to the timetable
-        state.selectedCourses.forEach(course => {
-            selectedCourses.push(course);
-            updateTimetable(course);
-        });
-        updateSelectedCoursesList();
-        updateStats();
-        console.log(`✅ Restored ${state.selectedCourses.length} courses from browser cache (saved ${state.savedAt})`);
-    } catch (e) {
-        console.warn('Could not restore timetable state:', e);
-    }
+    // Re-add each course back to the timetable
+    state.selectedCourses.forEach(course => {
+      selectedCourses.push(course);
+      updateTimetable(course);
+    });
+    updateSelectedCoursesList();
+    updateStats();
+    console.log(`✅ Restored ${state.selectedCourses.length} courses from browser cache (saved ${state.savedAt})`);
+  } catch (e) {
+    console.warn('Could not restore timetable state:', e);
+  }
 }
 
 // Patch the key mutation functions to auto-save after every change
 (function patchAutoSave() {
-    // Wait until DOM is ready and original functions are defined
-    document.addEventListener('DOMContentLoaded', () => {
-        // Restore saved timetable
-        restoreTimetableState();
+  // Wait until DOM is ready and original functions are defined
+  document.addEventListener('DOMContentLoaded', () => {
+    // Restore saved timetable
+    restoreTimetableState();
 
-        // Patch addTheoryCourse
-        const _origAddTheory = window.addTheoryCourse;
-        if (typeof _origAddTheory === 'function') {
-            window.addTheoryCourse = function (...args) {
-                _origAddTheory.apply(this, args);
-                saveTimetableState();
-            };
-        }
+    // Patch addTheoryCourse
+    const _origAddTheory = window.addTheoryCourse;
+    if (typeof _origAddTheory === 'function') {
+      window.addTheoryCourse = function (...args) {
+        _origAddTheory.apply(this, args);
+        saveTimetableState();
+      };
+    }
 
-        // Patch addLabCourse
-        const _origAddLab = window.addLabCourse;
-        if (typeof _origAddLab === 'function') {
-            window.addLabCourse = function (...args) {
-                _origAddLab.apply(this, args);
-                saveTimetableState();
-            };
-        }
+    // Patch addLabCourse
+    const _origAddLab = window.addLabCourse;
+    if (typeof _origAddLab === 'function') {
+      window.addLabCourse = function (...args) {
+        _origAddLab.apply(this, args);
+        saveTimetableState();
+      };
+    }
 
-        // Patch removeCourse
-        const _origRemove = window.removeCourse;
-        if (typeof _origRemove === 'function') {
-            window.removeCourse = function (...args) {
-                _origRemove.apply(this, args);
-                saveTimetableState();
-            };
-        }
+    // Patch removeCourse
+    const _origRemove = window.removeCourse;
+    if (typeof _origRemove === 'function') {
+      window.removeCourse = function (...args) {
+        _origRemove.apply(this, args);
+        saveTimetableState();
+      };
+    }
 
-        // Patch clearAll
-        const _origClear = window.clearAll;
-        if (typeof _origClear === 'function') {
-            window.clearAll = function (...args) {
-                _origClear.apply(this, args);
-                try { localStorage.removeItem(TT_CACHE_KEY); } catch (e) {}
-            };
-        }
+    // Patch clearAll
+    const _origClear = window.clearAll;
+    if (typeof _origClear === 'function') {
+      window.clearAll = function (...args) {
+        _origClear.apply(this, args);
+        try { localStorage.removeItem(TT_CACHE_KEY); } catch (e) { }
+      };
+    }
 
-        // Patch toggleOcrSlot (if available in app.js)
-        const _origToggleOcr = window.toggleOcrSlot;
-        if (typeof _origToggleOcr === 'function') {
-            window.toggleOcrSlot = function (...args) {
-                _origToggleOcr.apply(this, args);
-                saveTimetableState();
-            };
-        }
+    // Patch toggleOcrSlot (if available in app.js)
+    const _origToggleOcr = window.toggleOcrSlot;
+    if (typeof _origToggleOcr === 'function') {
+      window.toggleOcrSlot = function (...args) {
+        _origToggleOcr.apply(this, args);
+        saveTimetableState();
+      };
+    }
 
-        // Patch toggleScreenshotSlot
-        const _origToggleSS = window.toggleScreenshotSlot;
-        if (typeof _origToggleSS === 'function') {
-            window.toggleScreenshotSlot = function (...args) {
-                _origToggleSS.apply(this, args);
-                saveTimetableState();
-            };
-        }
-    });
+    // Patch toggleScreenshotSlot
+    const _origToggleSS = window.toggleScreenshotSlot;
+    if (typeof _origToggleSS === 'function') {
+      window.toggleScreenshotSlot = function (...args) {
+        _origToggleSS.apply(this, args);
+        saveTimetableState();
+      };
+    }
+  });
 })();

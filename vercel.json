@@ -1,9 +1,17 @@
 {
   "version": 2,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
   "rewrites": [
     { "source": "/api/upload", "destination": "/api/upload.js" },
     { "source": "/api/generate", "destination": "/api/generate.js" },
-    { "source": "/api/health", "destination": "/api/health.js" }
+    { "source": "/api/health", "destination": "/api/health.js" },
+    { "source": "/api/pdf-ocr/results", "destination": "/api/pdf-ocr-results.js" },
+    { "source": "/api/pdf-ocr", "destination": "/api/pdf-ocr.js" }
   ],
   "headers": [
     {

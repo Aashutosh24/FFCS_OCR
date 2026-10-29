@@ -1,297 +1,88 @@
 [
   {
-    "source_file": "STS.pdf",
-    "course_code": "STS3007",
-    "course_name": "Advanced Competitive Coding",
-    "component_type": "| - Theory Only",
-    "credit": "3.0",
+    "source_file": "SWE2009.pdf",
+    "course_code": "SWE2009",
+    "course_name": "Analysis of Algorithms",
+    "component_type": "Embedded Theory",
+    "credit": "4.0",
     "theory_slots": [
       {
-        "slot": "D1+TDD1",
-        "venue": "CB-517",
-        "faculty": "Prof.VISH Dig Crs Faculty-7",
+        "slot": "A2+TA2",
+        "venue": "CB-520",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-3",
         "flags": []
       },
       {
-        "slot": "D1+TDD1",
-        "venue": "CB-502B",
-        "faculty": "DEEPTHI KATTERA",
+        "slot": "A2+TA2",
+        "venue": "CB-521",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
         "flags": []
       },
       {
-        "slot": "F1+TFF1",
-        "venue": "CB-502C",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
+        "slot": "A1+TA1",
+        "venue": "CB-423",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
         "flags": []
       },
       {
-        "slot": "F2+TFF2",
-        "venue": "CB-502C",
-        "faculty": "PRASANNA LAKSHMI",
+        "slot": "A1+TA1",
+        "venue": "CB-317",
+        "faculty": "Rajesh Duvvuru",
         "flags": []
       },
       {
-        "slot": "D1+TDD1",
-        "venue": "CB-502C",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
+        "slot": "A2+TA2",
+        "venue": "CB-523",
+        "faculty": "Bileesh P Babu",
         "flags": []
       },
       {
-        "slot": "D2+TDD2",
-        "venue": "CB-502A",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
-        "flags": []
-      },
-      {
-        "slot": "D2+TDD2",
-        "venue": "CB-502C",
-        "faculty": "Prof.VISH Dig Crs Faculty-7",
-        "flags": []
-      },
-      {
-        "slot": "D2+TDD2",
-        "venue": "CB-517",
-        "faculty": "Prof.VISH Dig Crs Faculty-3",
-        "flags": []
-      },
-      {
-        "slot": "D2+TDD2",
-        "venue": "CB-502B",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-502A",
-        "faculty": "Prof.VISH Dig Crs Faculty-3",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-416",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "E2+TE2",
-        "venue": "CB-502C",
-        "faculty": "Prof.VISH Dig Crs Faculty-3",
-        "flags": []
-      },
-      {
-        "slot": "F1+TFF1",
-        "venue": "CB-517",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "F2+TF2",
-        "venue": "CB-417",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
-        "flags": []
-      },
-      {
-        "slot": "F2+TFF2",
-        "venue": "CB-517",
-        "faculty": "DEEPTHI KATTERA",
-        "flags": []
-      },
-      {
-        "slot": "D2+TD2",
-        "venue": "CB-416",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-502B",
-        "faculty": "PRASANNA LAKSHMI",
-        "flags": []
-      },
-      {
-        "slot": "E2+TE2",
-        "venue": "CB-417",
-        "faculty": "Prof.VISH Dig Crs Faculty-5",
-        "flags": []
-      },
-      {
-        "slot": "D1+TDD1",
-        "venue": "CB-502A",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-419",
-        "faculty": "Prof.Ethnus Faculty-4",
-        "flags": []
-      },
-      {
-        "slot": "E2+TE2",
-        "venue": "CB-502B",
-        "faculty": "Prof.Ethnus Faculty-4",
-        "flags": []
-      },
-      {
-        "slot": "G1+TG1",
-        "venue": "CB-517",
-        "faculty": "PRASANNA LAKSHMI",
-        "flags": []
-      },
-      {
-        "slot": "E2+TE2",
-        "venue": "CB-517",
-        "faculty": "DEEPTHI KATTERA",
-        "flags": []
-      },
-      {
-        "slot": "C1+TCC1",
-        "venue": "CB-502C",
-        "faculty": "Prof.VISH Dig Crs Faculty-3",
-        "flags": []
-      },
-      {
-        "slot": "F1+TF1",
-        "venue": "CB-417",
-        "faculty": "SUJITHA",
-        "flags": []
-      },
-      {
-        "slot": "G2+TG2",
-        "venue": "CB-502C",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "C1+TCC1",
-        "venue": "CB-517",
-        "faculty": "PRASANNA LAKSHMI",
-        "flags": []
-      },
-      {
-        "slot": "C2+TCC2",
-        "venue": "CB-502A",
-        "faculty": "PRASANNA LAKSHMI",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-502C",
-        "faculty": "DEEPTHI KATTERA",
-        "flags": []
-      },
-      {
-        "slot": "C1+TCC1",
-        "venue": "CB-502B",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
-        "flags": []
-      },
-      {
-        "slot": "C2+TC2",
-        "venue": "CB-417",
-        "faculty": "Prof.VISH Dig Crs Faculty-6",
-        "flags": []
-      },
-      {
-        "slot": "C2+TC2",
-        "venue": "CB-419",
-        "faculty": "Prof.VISH Dig Crs Faculty-7",
-        "flags": []
-      },
-      {
-        "slot": "C2+TCC2",
-        "venue": "CB-517",
-        "faculty": "DEEPTHI KATTERA",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-417",
-        "faculty": "SUJITHA",
-        "flags": []
-      },
-      {
-        "slot": "C2+TCC2",
-        "venue": "CB-502B",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "F2+TF2",
-        "venue": "CB-315",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "C2+TC2",
-        "venue": "CB-416",
-        "faculty": "Prof.Ethnus Faculty-4",
-        "flags": []
-      },
-      {
-        "slot": "C1+TC1",
-        "venue": "CB-417",
-        "faculty": "Prof. VISH Dig Crs Faculty-7",
-        "flags": []
-      },
-      {
-        "slot": "C1+TCC1",
-        "venue": "CB-502A",
-        "faculty": "YAMUNA DURGAA",
-        "flags": []
-      },
-      {
-        "slot": "E1+TE1",
-        "venue": "CB-414",
-        "faculty": "Prof.VISH Dig Crs Faculty-7",
-        "flags": []
-      },
-      {
-        "slot": "E2+TE2",
-        "venue": "CB-414",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "C1+TC1",
-        "venue": "CB-419",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "C2+TCC2",
-        "venue": "CB-502C",
-        "faculty": "SUJITHA",
-        "flags": []
-      },
-      {
-        "slot": "C1+TC1",
-        "venue": "CB-416",
-        "faculty": "Prof.Ethnus Faculty-4",
-        "flags": []
-      },
-      {
-        "slot": "C2+TC2",
-        "venue": "CB-414",
-        "faculty": "ARIVARASAN A",
-        "flags": []
-      },
-      {
-        "slot": "D1+TD1",
-        "venue": "CB-414",
-        "faculty": "SUJITHA",
-        "flags": []
-      },
-      {
-        "slot": "C1+TC1",
-        "venue": "CB-414",
-        "faculty": "DEEPTHI KATTERA",
+        "slot": "A1+TA1",
+        "venue": "CB-425",
+        "faculty": "Bileesh P Babu",
         "flags": []
       }
     ],
-    "lab_slots": [],
+    "lab_slots": [
+      {
+        "slot": "L23+L24",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L5+L6",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L9+L10",
+        "venue": "CB-303",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L7+L8",
+        "venue": "CB-321",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      },
+      {
+        "slot": "L35+L36",
+        "venue": "CB-321",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L43+L44",
+        "venue": "CB-302",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      }
+    ],
     "needs_ocr": true,
-    "pages": 1,
+    "pages": 3,
     "warnings": [],
     "error": null,
     "missing_fields": [],
