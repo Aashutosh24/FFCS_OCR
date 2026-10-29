@@ -94,6 +94,14 @@ function extractSlotOfferingFromLine(line, slotsOnLine) {
     if (!faculty || faculty.length < 2) faculty = 'TBA';
     if (!venue || venue.length < 2) venue = 'TBA';
 
+    // Filter out portal noise lines / headers / fake slots (e.g. "UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION")
+    if (
+        /(?:UNIVERSITY|FALL\s+SEMESTER|WINTER\s+SEMESTER|REGISTRATION|VTOP|ACADEMIC|STUDY\s+SYSTEM|CONFIRM\s+REGISTRATION)/i.test(line) ||
+        /(?:UNIVERSITY|FALL\s+SEMESTER|WINTER\s+SEMESTER|REGISTRATION|VTOP|ACADEMIC|STUDY\s+SYSTEM|CONFIRM\s+REGISTRATION)/i.test(faculty)
+    ) {
+        return null;
+    }
+
     const isLab = /^L\d+/i.test(slot);
 
     return {
@@ -122,9 +130,10 @@ function parseOCRText(rawText) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Skip pure table column labels / noise headers
+        // Skip pure table column labels / noise headers / portal banners
         if (
             /^(COURSE\s+CODE|COURSE\s+TITLE|SLOT\s+VENUE|GENERAL\s+AVAILABLE|SLOT\s+FACULTY|COURSE\s+MODE)/i.test(line) ||
+            /(?:UNIVERSITY|FALL\s+SEMESTER|WINTER\s+SEMESTER|REGISTRATION|VTOP|ACADEMIC\s+YEAR|STUDY\s+SYSTEM|CONFIRM\s+REGISTRATION)/i.test(line) ||
             line === 'GENERAL' || line === 'AVAILABLE' || line === '—_—'
         ) {
             continue;

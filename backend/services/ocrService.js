@@ -1,13 +1,27 @@
+const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const { createWorker } = require("tesseract.js");
 
-// On Vercel (read-only filesystem) use CDN; locally use the bundled traineddata.
-// Tesseract.js v5 accepts a URL as langPath and will fetch from CDN if needed.
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined;
-const LANG_PATH = IS_VERCEL
-    ? 'https://tessdata.projectnaptha.com/4.0.0'
-    : path.resolve(__dirname, "..");
+
+function getLangPath() {
+  const candidates = [
+    path.resolve(__dirname, ".."),
+    process.cwd(),
+    path.resolve(process.cwd(), "backend"),
+    __dirname,
+  ];
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, "eng.traineddata"))) {
+      return dir;
+    }
+  }
+  // Fast CDN fallback on jsdelivr (reliable global CDN)
+  return "https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0";
+}
+
+const LANG_PATH = getLangPath();
 
 /**
  * Scale image up if it is small or low DPI, for optimal Tesseract recognition
@@ -92,7 +106,7 @@ function textHasCourseSignals(text) {
 async function extractTextFromImage(inputBuffer) {
   const worker = await createWorker("eng", 1, {
     langPath: LANG_PATH,
-    ...(IS_VERCEL ? {} : { cachePath: LANG_PATH }),
+    cachePath: IS_VERCEL ? "/tmp" : LANG_PATH,
   });
 
   try {
@@ -117,7 +131,6 @@ async function extractTextFromImage(inputBuffer) {
       if (resRed.data.text && textHasCourseSignals(resRed.data.text)) {
         return { text: resRed.data.text, confidence: resRed.data.confidence };
       }
-      // If red channel produced significantly more text, keep it
       if (resRed.data.text && resRed.data.text.trim().length > (text ? text.trim().length : 0)) {
         text = resRed.data.text;
         confidence = resRed.data.confidence;
