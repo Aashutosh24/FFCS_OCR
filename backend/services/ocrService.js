@@ -10,6 +10,23 @@ const { createWorker } = require("tesseract.js");
 
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined;
 
+function getCorePath() {
+  const candidates = [
+    path.resolve(__dirname, "../tesseract-core"),
+    path.resolve(process.cwd(), "backend/tesseract-core"),
+    "/var/task/backend/tesseract-core",
+    path.resolve(__dirname, "../../node_modules/tesseract.js-core"),
+    path.resolve(process.cwd(), "node_modules/tesseract.js-core"),
+    "/var/task/node_modules/tesseract.js-core",
+  ];
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, "tesseract-core-simd.wasm")) || fs.existsSync(path.join(dir, "tesseract-core.wasm"))) {
+      return dir;
+    }
+  }
+  return "https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.1.0";
+}
+
 function getLangPath() {
   const candidates = [
     path.resolve(__dirname, ".."),
@@ -20,14 +37,14 @@ function getLangPath() {
     "/var/task/backend",
   ];
   for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, "eng.traineddata"))) {
+    if (fs.existsSync(path.join(dir, "eng.traineddata")) || fs.existsSync(path.join(dir, "eng.traineddata.gz"))) {
       return dir;
     }
   }
-  // Fast CDN fallback on jsdelivr (reliable global CDN)
   return "https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0";
 }
 
+const CORE_PATH = getCorePath();
 const LANG_PATH = getLangPath();
 
 /**
@@ -70,7 +87,6 @@ async function preprocessGrayscale(inputBuffer) {
 
 /**
  * Color-channel separation (Red channel)
- * Maximizes contrast for warm-colored cards (red, orange, pink) with cyan/blue/dark text
  */
 async function preprocessRedChannel(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
@@ -88,7 +104,6 @@ async function preprocessRedChannel(inputBuffer) {
 
 /**
  * Color-channel separation (Blue channel)
- * Maximizes contrast for cool-colored cards (blue, cyan, green) with yellow/red/dark text
  */
 async function preprocessBlueChannel(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
@@ -127,20 +142,21 @@ async function preprocessThreshold(inputBuffer) {
  */
 function textHasCourseSignals(text) {
   if (!text) return false;
-  // Match standard slots like A1, B1, TFF1, L1+L2, or course codes like CSE3001
   return /\b([A-Z]{2,4}\d{4}|[A-G]\d|T[A-Z]{1,2}\d|L\d{1,2})\b/i.test(text);
 }
 
 /**
- * OCR using Tesseract.js with multi-pass color channel adaptation
+ * OCR using Tesseract.js with core and lang assets
  */
 async function extractTextFromImage(inputBuffer) {
   const worker = await createWorker("eng", 1, {
+    corePath: CORE_PATH,
     langPath: LANG_PATH,
+    gzip: false,
     cachePath: IS_VERCEL ? "/tmp" : LANG_PATH,
   });
 
-  try {
+  const ocrJob = async () => {
     await worker.setParameters({
       tessedit_pageseg_mode: "6", // Assume uniform block of text
       preserve_interword_spaces: "1",
@@ -155,31 +171,33 @@ async function extractTextFromImage(inputBuffer) {
       return { text: text || "", confidence: confidence || 0 };
     }
 
-    // Pass 2: Red channel separation (handles red/orange timetable cards with blue/cyan text)
+    // Pass 2: Red channel separation
     try {
       const redBuffer = await preprocessRedChannel(inputBuffer);
-      if (!redBuffer) throw new Error("no red channel");
-      const resRed = await worker.recognize(redBuffer);
-      if (resRed.data.text && textHasCourseSignals(resRed.data.text)) {
-        return { text: resRed.data.text, confidence: resRed.data.confidence };
-      }
-      if (resRed.data.text && resRed.data.text.trim().length > (text ? text.trim().length : 0)) {
-        text = resRed.data.text;
-        confidence = resRed.data.confidence;
+      if (redBuffer) {
+        const resRed = await worker.recognize(redBuffer);
+        if (resRed.data.text && textHasCourseSignals(resRed.data.text)) {
+          return { text: resRed.data.text, confidence: resRed.data.confidence };
+        }
+        if (resRed.data.text && resRed.data.text.trim().length > (text ? text.trim().length : 0)) {
+          text = resRed.data.text;
+          confidence = resRed.data.confidence;
+        }
       }
     } catch (_) {}
 
-    // Pass 3: Blue channel separation (handles blue/cyan timetable cards)
+    // Pass 3: Blue channel separation
     try {
       const blueBuffer = await preprocessBlueChannel(inputBuffer);
-      if (!blueBuffer) throw new Error("no blue channel");
-      const resBlue = await worker.recognize(blueBuffer);
-      if (resBlue.data.text && textHasCourseSignals(resBlue.data.text)) {
-        return { text: resBlue.data.text, confidence: resBlue.data.confidence };
-      }
-      if (resBlue.data.text && resBlue.data.text.trim().length > (text ? text.trim().length : 0)) {
-        text = resBlue.data.text;
-        confidence = resBlue.data.confidence;
+      if (blueBuffer) {
+        const resBlue = await worker.recognize(blueBuffer);
+        if (resBlue.data.text && textHasCourseSignals(resBlue.data.text)) {
+          return { text: resBlue.data.text, confidence: resBlue.data.confidence };
+        }
+        if (resBlue.data.text && resBlue.data.text.trim().length > (text ? text.trim().length : 0)) {
+          text = resBlue.data.text;
+          confidence = resBlue.data.confidence;
+        }
       }
     } catch (_) {}
 
@@ -187,18 +205,29 @@ async function extractTextFromImage(inputBuffer) {
     if (!text || text.trim().length < 20) {
       try {
         const thresholdBuffer = await preprocessThreshold(inputBuffer);
-        if (!thresholdBuffer) throw new Error("no threshold");
-        const resThresh = await worker.recognize(thresholdBuffer);
-        if (resThresh.data.text && resThresh.data.text.trim().length > (text ? text.trim().length : 0)) {
-          text = resThresh.data.text;
-          confidence = resThresh.data.confidence;
+        if (thresholdBuffer) {
+          const resThresh = await worker.recognize(thresholdBuffer);
+          if (resThresh.data.text && resThresh.data.text.trim().length > (text ? text.trim().length : 0)) {
+            text = resThresh.data.text;
+            confidence = resThresh.data.confidence;
+          }
         }
       } catch (_) {}
     }
 
     return { text: text || "", confidence: confidence || 0 };
+  };
+
+  const timeoutJob = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("OCR timeout (20s limit reached)")), 20000)
+  );
+
+  try {
+    return await Promise.race([ocrJob(), timeoutJob]);
   } finally {
-    await worker.terminate();
+    try {
+      await worker.terminate();
+    } catch (_) {}
   }
 }
 

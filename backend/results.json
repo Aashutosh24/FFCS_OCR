@@ -1,0 +1,152 @@
+[
+  {
+    "source_file": "SWE2009.pdf",
+    "course_code": "SWE2009",
+    "course_name": "Analysis of Algorithms",
+    "component_type": "Embedded Theory",
+    "credit": "4.0",
+    "theory_slots": [
+      {
+        "slot": "A2+TA2",
+        "venue": "CB-520",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-3",
+        "flags": []
+      },
+      {
+        "slot": "A2+TA2",
+        "venue": "CB-521",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "A1+TA1",
+        "venue": "CB-423",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "A1+TA1",
+        "venue": "CB-317",
+        "faculty": "Rajesh Duvvuru",
+        "flags": []
+      },
+      {
+        "slot": "A2+TA2",
+        "venue": "CB-523",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      },
+      {
+        "slot": "A1+TA1",
+        "venue": "CB-425",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      }
+    ],
+    "lab_slots": [
+      {
+        "slot": "L23+L24",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L5+L6",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L9+L10",
+        "venue": "CB-303",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L7+L8",
+        "venue": "CB-321",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      },
+      {
+        "slot": "L35+L36",
+        "venue": "CB-321",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L43+L44",
+        "venue": "CB-302",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      }
+    ],
+    "needs_ocr": true,
+    "pages": 3,
+    "warnings": [],
+    "error": null,
+    "missing_fields": [],
+    "confidence": "ok"
+  },
+  {
+    "source_file": "SWE3003.pdf",
+    "course_code": "SWE3003",
+    "course_name": "Information and System Security",
+    "component_type": "Embedded Theory and Lab",
+    "credit": "4.0",
+    "theory_slots": [
+      {
+        "slot": "C2+TC2",
+        "venue": "CB-322",
+        "faculty": "TARUN NARAYAN SHANKAR",
+        "flags": []
+      },
+      {
+        "slot": "C2+TC2",
+        "venue": "CB-323",
+        "faculty": "Adla Padma",
+        "flags": []
+      },
+      {
+        "slot": "C1+TC1",
+        "venue": "CB-519",
+        "faculty": "Adla Padma",
+        "flags": []
+      }
+    ],
+    "lab_slots": [
+      {
+        "slot": "L24",
+        "venue": null,
+        "faculty": "UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION",
+        "flags": [
+          "missing_venue"
+        ]
+      },
+      {
+        "slot": "L1+L2",
+        "venue": "CB-105",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L21+L22",
+        "venue": "CB-405",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L45+L46",
+        "venue": "CB-409",
+        "faculty": "TARUN NARAYAN SHANKAR",
+        "flags": []
+      }
+    ],
+    "needs_ocr": true,
+    "pages": 2,
+    "warnings": [],
+    "error": null,
+    "missing_fields": [],
+    "confidence": "review"
+  }
+]

@@ -1,6 +1,6 @@
-backend/node_modules
 course_ocr
+backend/node_modules
+*.py
 *.pyc
 __pycache__
-node_modules
 .git
