@@ -1401,7 +1401,77 @@ function clearOcrStatus() {
   if (el) el.style.display = "none";
 }
 
-// Run Course Import
+// Helper to merge multiple course lists, preserving all unique slots, faculties & venues
+function mergeCourseLists(existingCourses, incomingCourses) {
+  const map = new Map();
+  const getCourseKey = (c) =>
+    (c.code && c.code !== "N/A" ? c.code : c.name || "")
+      .trim()
+      .toUpperCase();
+
+  function addCourse(c) {
+    const key = getCourseKey(c);
+    if (!key) return;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        code: c.code || "",
+        name: c.name || "",
+        component: c.component || "Theory",
+        credit: c.credit || 3,
+        theorySlots: [...(c.theorySlots || [])],
+        labSlots: [...(c.labSlots || [])],
+        offerings: [...(c.offerings || [])],
+        slots: [...(c.slots || [])],
+        options: [...(c.options || [])],
+      });
+      return;
+    }
+
+    const target = map.get(key);
+    if (
+      (!target.name || target.name.startsWith("Course (")) &&
+      c.name &&
+      !c.name.startsWith("Course (")
+    ) {
+      target.name = c.name;
+    }
+    if (c.credit && (!target.credit || target.credit === 3)) {
+      target.credit = c.credit;
+    }
+
+    const mergeSlots = (targetList, sourceList) => {
+      const seen = new Set(
+        targetList.map(
+          (s) =>
+            `${(s.slot || "").trim().toUpperCase()}__${(s.faculty || "").trim().toLowerCase()}__${(s.venue || "").trim().toUpperCase()}`,
+        ),
+      );
+      for (const item of sourceList) {
+        const itemKey = `${(item.slot || "").trim().toUpperCase()}__${(item.faculty || "").trim().toLowerCase()}__${(item.venue || "").trim().toUpperCase()}`;
+        if (!seen.has(itemKey)) {
+          seen.add(itemKey);
+          targetList.push(item);
+        }
+      }
+    };
+
+    mergeSlots(target.theorySlots, c.theorySlots || []);
+    mergeSlots(target.labSlots, c.labSlots || []);
+    mergeSlots(target.offerings, c.offerings || []);
+
+    for (const s of c.slots || []) {
+      if (!target.slots.includes(s)) target.slots.push(s);
+    }
+  }
+
+  for (const c of existingCourses) addCourse(c);
+  for (const c of incomingCourses) addCourse(c);
+
+  return Array.from(map.values());
+}
+
+// Run Course Import (file-by-file upload to prevent 413 Payload Too Large)
 async function runCourseOcr() {
   const fileInput = document.getElementById("pdfFileInput");
   if (!fileInput || !fileInput.files.length) {
@@ -1409,48 +1479,108 @@ async function runCourseOcr() {
     return;
   }
 
-  const files = fileInput.files;
-  const formData = new FormData();
-  for (let i = 0; i < files.length; i++) {
-    formData.append("pdfs", files[i]);
-  }
-
+  const files = Array.from(fileInput.files);
   const btn = document.getElementById("runOcrBtn");
   if (btn) btn.disabled = true;
 
-  const fileLabel =
-    files.length === 1 ? files[0].name : `${files.length} course files`;
-  setOcrStatus(
-    `Reading course details from ${fileLabel}... (takes a few moments)`,
-    "info",
-    true,
-  );
+  let aggregatedCourses = [];
+  const successfulFiles = [];
+  const failedFiles = [];
 
   try {
-    const res = await fetch("/api/pdf-ocr", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      const progressLabel = files.length > 1 ? ` (${i + 1}/${files.length})` : "";
 
-    if (!data.success) {
-      throw new Error(data.error || "Failed to import courses");
+      setOcrStatus(
+        `Reading course details from ${file.name}${progressLabel}... (takes a few moments)`,
+        "info",
+        true,
+      );
+
+      // Pre-flight check: Vercel serverless request body limit is 4.5 MB
+      if (file.size > 4.5 * 1024 * 1024) {
+        failedFiles.push({
+          name: file.name,
+          error: `File size (${sizeMb} MB) exceeds Vercel 4.5 MB limit. Please compress or upload smaller pages.`,
+        });
+        continue;
+      }
+
+      const formData = new FormData();
+      formData.append("pdfs", file);
+
+      try {
+        const res = await fetch("/api/pdf-ocr", {
+          method: "POST",
+          body: formData,
+        });
+
+        const rawText = await res.text();
+        let data = null;
+
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          if (res.status === 413) {
+            throw new Error(`File too large for serverless upload (${sizeMb} MB; max 4.5 MB).`);
+          }
+          throw new Error(`Server returned invalid response (${res.status}): ${rawText.slice(0, 100)}`);
+        }
+
+        if (!res.ok || !data.success) {
+          throw new Error(data?.error || `Failed to parse ${file.name}`);
+        }
+
+        const fileCourses = data.courses || [];
+        aggregatedCourses = mergeCourseLists(aggregatedCourses, fileCourses);
+        successfulFiles.push(file.name);
+
+        // Incrementally display parsed courses in the UI as each file completes
+        if (aggregatedCourses.length > 0) {
+          handleOcrResults(aggregatedCourses);
+        }
+      } catch (fileErr) {
+        console.error(`Import Error on "${file.name}":`, fileErr);
+        failedFiles.push({
+          name: file.name,
+          error: fileErr.message || "Failed to process",
+        });
+      }
     }
 
-    const count = data.courses ? data.courses.length : 0;
-    setOcrStatus(
-      `✓ Loaded ${count} courses from ${files.length} file(s)!`,
-      "success",
-    );
-    handleOcrResults(data.courses || []);
-    showToast(
-      `Imported ${count} courses from ${files.length} file(s)!`,
-      "success",
-    );
-  } catch (err) {
-    console.error("Import Error:", err);
-    setOcrStatus(`Error: ${err.message}`, "error");
-    showToast(`Error: ${err.message}`, "error");
+    // Final summary
+    if (aggregatedCourses.length > 0) {
+      handleOcrResults(aggregatedCourses);
+
+      if (failedFiles.length === 0) {
+        setOcrStatus(
+          `Loaded ${aggregatedCourses.length} courses from ${successfulFiles.length} file(s)!`,
+          "success",
+        );
+        showToast(
+          `Imported ${aggregatedCourses.length} courses from ${successfulFiles.length} file(s)!`,
+          "success",
+        );
+      } else {
+        const failNames = failedFiles.map((f) => f.name).join(", ");
+        setOcrStatus(
+          `Loaded ${aggregatedCourses.length} courses (${successfulFiles.length}/${files.length} succeeded). Failed: ${failNames}`,
+          "warning",
+        );
+        showToast(
+          `Loaded ${aggregatedCourses.length} courses. ${failedFiles.length} file(s) failed (${failNames}).`,
+          "warning",
+        );
+      }
+    } else {
+      const errDetails = failedFiles.length > 0
+        ? failedFiles.map((f) => `${f.name}: ${f.error}`).join(" | ")
+        : "No course details could be extracted.";
+      setOcrStatus(`Import failed: ${errDetails}`, "error");
+      showToast(`Import failed: ${failedFiles[0]?.error || errDetails}`, "error");
+    }
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1465,17 +1595,23 @@ async function loadLastOcrResults() {
 
   try {
     const res = await fetch("/api/pdf-ocr/results");
-    const data = await res.json();
+    const rawText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Server returned invalid response (${res.status}): ${rawText.slice(0, 100)}`);
+    }
 
-    if (!data.success) {
+    if (!res.ok || !data.success) {
       throw new Error(
-        data.error || "No recent course list found. Please upload a PDF first.",
+        data?.error || "No recent course list found. Please upload a PDF first.",
       );
     }
 
     const count = data.courses ? data.courses.length : 0;
     setOcrStatus(
-      `✓ Loaded ${count} courses from previous results.json`,
+      `Loaded ${count} courses from previous results.json`,
       "success",
     );
     handleOcrResults(data.courses || []);
@@ -1863,9 +1999,20 @@ async function uploadScreenshot() {
       body: formData,
     });
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to process image");
+    const rawText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(
+        response.status === 413
+          ? "Screenshot too large (exceeds Vercel 4.5 MB limit)."
+          : `Server returned an invalid response (${response.status}): ${rawText.slice(0, 100)}`
+      );
+    }
+
+    if (!response.ok || !data.success) {
+      throw new Error(data?.error || "Failed to process image");
     }
 
     const detectedCourses = data.courses || [];

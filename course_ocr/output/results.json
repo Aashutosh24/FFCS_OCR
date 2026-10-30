@@ -1,63 +1,112 @@
 [
   {
-    "source_file": "SWE3003.pdf",
-    "course_code": "SWE3003",
-    "course_name": "Information and System Security",
-    "component_type": "Embedded Theory and Lab",
+    "source_file": "CLOUD_PROE.pdf",
+    "course_code": "SWE4004",
+    "course_name": "Cloud Computing and its Applications",
+    "component_type": "Embedded Theory and Project",
     "credit": "4.0",
     "theory_slots": [
       {
-        "slot": "C2+TC2",
-        "venue": "CB-322",
-        "faculty": "TARUN NARAYAN SHANKAR",
+        "slot": "D2+TD2",
+        "venue": "CB-507",
+        "faculty": "JAWAHAR MUTHUSAMY",
         "flags": []
       },
       {
-        "slot": "C2+TC2",
-        "venue": "CB-323",
-        "faculty": "Adla Padma",
+        "slot": "D2+TDD2",
+        "venue": "CB-512",
+        "faculty": "Shaik Kareemulla",
         "flags": []
       },
       {
-        "slot": "C1+TC1",
-        "venue": "CB-519",
-        "faculty": "Adla Padma",
+        "slot": "D2+TD2",
+        "venue": "CB-510",
+        "faculty": "Nagendra Panini Challa",
+        "flags": []
+      },
+      {
+        "slot": "D1+TDD1",
+        "venue": "CB-219",
+        "faculty": "Shaik Kareemulla",
+        "flags": []
+      },
+      {
+        "slot": "D1+TD1",
+        "venue": "CB-220",
+        "faculty": "Nagendra Panini Challa",
         "flags": []
       }
     ],
-    "lab_slots": [
-      {
-        "slot": "L24",
-        "venue": null,
-        "faculty": "UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION",
-        "flags": [
-          "missing_venue"
-        ]
-      },
-      {
-        "slot": "L1+L2",
-        "venue": "CB-105",
-        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
-        "flags": []
-      },
-      {
-        "slot": "L21+L22",
-        "venue": "CB-405",
-        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
-        "flags": []
-      },
-      {
-        "slot": "L45+L46",
-        "venue": "CB-409",
-        "faculty": "TARUN NARAYAN SHANKAR",
-        "flags": []
-      }
-    ],
+    "lab_slots": [],
     "needs_ocr": true,
     "pages": 2,
     "warnings": [],
     "error": null,
     "missing_fields": [],
-    "confidence": "review"
+    "confidence": "ok"
+  },
+  {
+    "source_file": "FRENCH.pdf",
+    "course_code": "FRL1001",
+    "course_name": "Basic French",
+    "component_type": "Theory Only",
+    "credit": "2.0",
+    "theory_slots": [
+      {
+        "slot": "B1",
+        "venue": "CB-501",
+        "faculty": "RITESH RANJAN",
+        "flags": []
+      },
+      {
+        "slot": "A1",
+        "venue": "AB2-112",
+        "faculty": "RITESH RANJAN",
+        "flags": []
+      },
+      {
+        "slot": "E2",
+        "venue": "AB2-212",
+        "faculty": "RITESH RANJAN",
+        "flags": []
+      },
+      {
+        "slot": "F1",
+        "venue": "CB-315",
+        "faculty": "Dheeraj Kumar",
+        "flags": []
+      },
+      {
+        "slot": "G1",
+        "venue": "AB2-214",
+        "faculty": "Chandan Vishwas",
+        "flags": []
+      },
+      {
+        "slot": "B1",
+        "venue": "CB-504",
+        "faculty": "Dheeraj Kumar",
+        "flags": []
+      },
+      {
+        "slot": "C1",
+        "venue": "AB2-212",
+        "faculty": "Chandan Vishwas",
+        "flags": []
+      },
+      {
+        "slot": "C2",
+        "venue": "CB-113",
+        "faculty": "Dheeraj Kumar",
+        "flags": []
+      }
+    ],
+    "lab_slots": [],
+    "needs_ocr": true,
+    "pages": 1,
+    "warnings": [],
+    "error": null,
+    "missing_fields": [],
+    "confidence": "ok"
   }
 ]
