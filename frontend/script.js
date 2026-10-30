@@ -1978,111 +1978,56 @@ function printTimetable() {
 
 // Modern Toast Notification System
 function showToast(message, type = "info", clashInfo = null) {
-  // Strip duplicate leading checkmarks or emoji symbols
-  let cleanMessage = String(message || '').replace(/^[✓✔✅☑️⚠️ℹ️❌✗\s\-:.]+/g, '').trim();
+  // Strip duplicate leading checkmarks, symbols or spaces so only 1 tick appears
+  let cleanMessage = String(message || "")
+    .replace(/^[✓✔✅☑️⚠️ℹ️❌✗\s\-:.]+/g, "")
+    .trim();
 
-  let container = document.getElementById('toast-container');
+  let container = document.getElementById("toast-container");
   if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container';
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "toast-container";
     document.body.appendChild(container);
   }
 
   // Dismiss previous toast
-  const existing = container.querySelector('.beautiful-alert');
+  const existing = container.querySelector(".beautiful-alert");
   if (existing) {
-    existing.classList.remove('show');
-    existing.classList.add('hide');
-    setTimeout(() => existing.remove(), 200);
+    existing.classList.remove("show");
+    existing.classList.add("hide");
+    setTimeout(() => existing.remove(), 180);
   }
 
-  const toast = document.createElement('div');
-  toast.className = 'beautiful-alert ' + type;
+  const toast = document.createElement("div");
+  toast.className = `beautiful-alert ${type}`;
 
-  // Crisp SVG Icons
-  let iconSvg = '';
-  if (type === 'success') {
-    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-  } else if (type === 'error') {
-    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-  } else if (type === 'warning') {
-    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-  } else {
-    iconSvg = '<svg class="toast-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
-  }
+  let icon = "ℹ️";
+  if (type === "success") icon = "✓";
+  if (type === "error") icon = "❌";
+  if (type === "warning") icon = "⚠️";
 
-  // Parse structured course message (e.g. "Added German for Beginners [A2] (VELMALA SHARATH KUMAR) to timetable!")
-  let formattedHtml = '';
-  const addMatch = cleanMessage.match(/^(?:Added\s+)?(.*?)\s*\[(.*?)\]\s*(?:\((.*?)\))?\s*(?:to\s+timetable!?)?$/i);
-  const removeMatch = cleanMessage.match(/^(?:Removed\s+)(.*?)\s*\[(.*?)\]\s*(?:from\s+timetable!?)?$/i);
-
-    if (clashInfo && clashInfo.conflicts && clashInfo.conflicts.length > 0) {
+  let displayHtml = "";
+  if (clashInfo && clashInfo.conflicts && clashInfo.conflicts.length > 0) {
     const firstC = clashInfo.conflicts[0];
-    const moreCount = clashInfo.totalClashes > 1 ? ` <span style="opacity:0.8; font-size:10.5px;">(+${clashInfo.totalClashes - 1} more)</span>` : '';
-    formattedHtml = `
-      <div class="toast-header-row">
-        <span class="toast-badge-pill error">Scheduling Clash</span>
-      </div>
-      <div class="toast-course-name">Cannot add ${escapeHtml(clashInfo.courseName)}</div>
-      <div class="toast-meta-row">
-        <span class="toast-slot-tag" style="background:rgba(239,68,68,0.18); color:#fca5a5; border-color:rgba(239,68,68,0.35);">${escapeHtml(clashInfo.slot)}</span>
-        <span class="toast-faculty-tag">${escapeHtml((clashInfo.courseType || '').toUpperCase())}</span>
-      </div>
-      <div class="toast-clash-box">
-        ⚠️ <strong>Clashes with:</strong> <span class="toast-clash-highlight">${escapeHtml(firstC.course)}</span> (${escapeHtml(firstC.type)}${firstC.slot ? ' • ' + escapeHtml(firstC.slot) : ''}) on <strong>${escapeHtml(firstC.day)} ${escapeHtml(firstC.timeSlot)}</strong>${moreCount}
-      </div>
-    `;
-  } else if (addMatch && addMatch[1]) {
-    const course = addMatch[1].trim();
-    const slot = (addMatch[2] || '').trim();
-    const faculty = (addMatch[3] || '').trim();
-    formattedHtml = `
-      <div class="toast-header-row">
-        <span class="toast-badge-pill ${type}">Added to Timetable</span>
-      </div>
-      <div class="toast-course-name">${escapeHtml(course)}</div>
-      <div class="toast-meta-row">
-        ${slot ? `<span class="toast-slot-tag">${escapeHtml(slot)}</span>` : ''}
-        ${faculty && faculty !== 'TBA' ? `<span class="toast-faculty-tag">${escapeHtml(faculty)}</span>` : ''}
-      </div>
-    `;
-  } else if (removeMatch && removeMatch[1]) {
-    const course = removeMatch[1].trim();
-    const slot = (removeMatch[2] || '').trim();
-    formattedHtml = `
-      <div class="toast-header-row">
-        <span class="toast-badge-pill info">Removed</span>
-      </div>
-      <div class="toast-course-name">${escapeHtml(course)}</div>
-      ${slot ? `<div class="toast-meta-row"><span class="toast-slot-tag">${escapeHtml(slot)}</span></div>` : ''}
-    `;
+    const moreCount = clashInfo.totalClashes > 1 ? ` (+${clashInfo.totalClashes - 1} more)` : "";
+    displayHtml = `Cannot add <strong>${escapeHtml(clashInfo.courseName)}</strong> [${escapeHtml(clashInfo.slot)}]: Clashes with <strong>${escapeHtml(firstC.course)}</strong> (${escapeHtml(firstC.type)}${firstC.slot ? " • " + escapeHtml(firstC.slot) : ""}) on <strong>${escapeHtml(firstC.day)} ${escapeHtml(firstC.timeSlot)}</strong>${moreCount}`;
   } else {
-    formattedHtml = `
-      <div class="toast-body-text">${escapeHtml(cleanMessage)}</div>
-    `;
+    displayHtml = escapeHtml(cleanMessage);
   }
 
   toast.innerHTML = `
     <div class="alert-content">
-      <div class="toast-icon-wrapper ${type}">${iconSvg}</div>
-      <div class="alert-message-wrap">${formattedHtml}</div>
-      <button class="alert-close" aria-label="Dismiss" onclick="dismissToast(this.closest('.beautiful-alert'))">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="toast-progress-track">
-      <div class="toast-progress-bar ${type}"></div>
+      <span class="alert-icon">${icon}</span>
+      <span class="alert-message">${displayHtml}</span>
+      <button class="alert-close" aria-label="Dismiss" onclick="dismissToast(this.closest('.beautiful-alert'))">&times;</button>
     </div>
   `;
 
   container.appendChild(toast);
 
   requestAnimationFrame(() => {
-    toast.classList.add('show');
+    toast.classList.add("show");
   });
 
   let timeoutId;
@@ -2095,18 +2040,14 @@ function showToast(message, type = "info", clashInfo = null) {
     }, ms);
   }
 
-  toast.addEventListener('mouseenter', () => {
+  toast.addEventListener("mouseenter", () => {
     clearTimeout(timeoutId);
     remainingMs -= (Date.now() - startTime);
-    const bar = toast.querySelector('.toast-progress-bar');
-    if (bar) bar.style.animationPlayState = 'paused';
   });
 
-  toast.addEventListener('mouseleave', () => {
+  toast.addEventListener("mouseleave", () => {
     startTime = Date.now();
     startTimer(Math.max(remainingMs, 800));
-    const bar = toast.querySelector('.toast-progress-bar');
-    if (bar) bar.style.animationPlayState = 'running';
   });
 
   startTimer(remainingMs);
@@ -2114,8 +2055,8 @@ function showToast(message, type = "info", clashInfo = null) {
 
 function dismissToast(el) {
   if (!el) return;
-  el.classList.remove('show');
-  el.classList.add('hide');
+  el.classList.remove("show");
+  el.classList.add("hide");
   setTimeout(() => el.remove(), 260);
 }
 

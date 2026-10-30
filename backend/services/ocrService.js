@@ -16,6 +16,8 @@ function getLangPath() {
     process.cwd(),
     path.resolve(process.cwd(), "backend"),
     __dirname,
+    "/var/task",
+    "/var/task/backend",
   ];
   for (const dir of candidates) {
     if (fs.existsSync(path.join(dir, "eng.traineddata"))) {
@@ -29,19 +31,18 @@ function getLangPath() {
 const LANG_PATH = getLangPath();
 
 /**
- * Scale image up if it is small or low DPI, for optimal Tesseract recognition
+ * Scale image for optimal Tesseract recognition speed and accuracy
  */
-async function preparePipeline(inputBuffer, scaleUp = true) {
+async function preparePipeline(inputBuffer) {
   if (!sharp) return null;
   try {
     let pipeline = sharp(inputBuffer).rotate();
-    if (scaleUp) {
-      const meta = await sharp(inputBuffer).metadata();
-      if (meta && meta.width && meta.width < 1600) {
-        pipeline = pipeline.resize({
-          width: Math.min(meta.width * 2, 2400),
-          kernel: "lanczos3",
-        });
+    const meta = await sharp(inputBuffer).metadata();
+    if (meta && meta.width) {
+      if (meta.width > 2000) {
+        pipeline = pipeline.resize({ width: 1800 });
+      } else if (meta.width < 1200) {
+        pipeline = pipeline.resize({ width: Math.min(meta.width * 2, 1800) });
       }
     }
     return pipeline;

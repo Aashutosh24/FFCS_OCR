@@ -1,28 +1,10 @@
 'use strict';
 
-const multer = require('multer');
+const { parseMultipart } = require('../backend/services/multipart');
 const { extractTextFromImage } = require('../backend/services/ocrService');
 const { parseOCRText } = require('../backend/services/parser');
 
-// In-memory multer storage (zero disk storage, auto-discarded after response)
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB max total
-    fileFilter(_req, file, cb) {
-        cb(null, true);
-    }
-});
-
-function runMiddleware(req, res, fn) {
-    return new Promise((resolve, reject) => {
-        fn(req, res, (result) => {
-            if (result instanceof Error) return reject(result);
-            return resolve(result);
-        });
-    });
-}
-
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -36,14 +18,14 @@ module.exports = async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
+    let files = [];
     try {
-        await runMiddleware(req, res, upload.any());
+        files = await parseMultipart(req);
     } catch (err) {
-        return res.status(400).json({ success: false, error: err.message });
+        return res.status(400).json({ success: false, error: err.message || 'Failed to parse upload.' });
     }
 
     try {
-        const files = req.files || (req.file ? [req.file] : []);
         if (!files || files.length === 0) {
             return res.status(400).json({ success: false, error: 'No image file provided.' });
         }
@@ -54,7 +36,8 @@ module.exports = async function handler(req, res) {
         let allRawSlots = [];
         let allLines = [];
 
-        for (const file of files) {
+        // For screenshot upload, process up to the first valid file
+        for (const file of files.slice(0, 3)) {
             try {
                 const ocrResult = await extractTextFromImage(file.buffer);
                 const rawText = typeof ocrResult === 'string' ? ocrResult : (ocrResult.text || '');
@@ -70,7 +53,7 @@ module.exports = async function handler(req, res) {
             }
         }
 
-        // Deduplicate courses by course code
+        // Deduplicate courses by course code or name
         const uniqueCourses = [];
         const seenCodes = new Set();
         for (const c of allCourses) {
@@ -79,7 +62,6 @@ module.exports = async function handler(req, res) {
                 seenCodes.add(key);
                 uniqueCourses.push(c);
             } else {
-                // Merge offerings if already present
                 const existing = uniqueCourses.find(ec => (ec.code || ec.name || '').toUpperCase() === key);
                 if (existing && c.offerings) {
                     existing.offerings = existing.offerings || [];
@@ -104,4 +86,11 @@ module.exports = async function handler(req, res) {
         console.error('OCR error:', err);
         return res.status(500).json({ success: false, error: 'OCR processing failed.', detail: err.message });
     }
+}
+
+module.exports = handler;
+module.exports.config = {
+    api: {
+        bodyParser: false,
+    },
 };

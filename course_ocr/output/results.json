@@ -87,5 +87,66 @@
     "error": null,
     "missing_fields": [],
     "confidence": "ok"
+  },
+  {
+    "source_file": "SWE3003.pdf",
+    "course_code": "SWE3003",
+    "course_name": "Information and System Security",
+    "component_type": "Embedded Theory and Lab",
+    "credit": "4.0",
+    "theory_slots": [
+      {
+        "slot": "C2+TC2",
+        "venue": "CB-322",
+        "faculty": "TARUN NARAYAN SHANKAR",
+        "flags": []
+      },
+      {
+        "slot": "C2+TC2",
+        "venue": "CB-323",
+        "faculty": "Adla Padma",
+        "flags": []
+      },
+      {
+        "slot": "C1+TC1",
+        "venue": "CB-519",
+        "faculty": "Adla Padma",
+        "flags": []
+      }
+    ],
+    "lab_slots": [
+      {
+        "slot": "L24",
+        "venue": null,
+        "faculty": "UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION",
+        "flags": [
+          "missing_venue"
+        ]
+      },
+      {
+        "slot": "L1+L2",
+        "venue": "CB-105",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L21+L22",
+        "venue": "CB-405",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L45+L46",
+        "venue": "CB-409",
+        "faculty": "TARUN NARAYAN SHANKAR",
+        "flags": []
+      }
+    ],
+    "needs_ocr": true,
+    "pages": 2,
+    "warnings": [],
+    "error": null,
+    "missing_fields": [],
+    "confidence": "review"
   }
 ]

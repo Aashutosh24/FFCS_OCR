@@ -1,41 +1,30 @@
 'use strict';
 
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { parseMultipart } = require('../backend/services/multipart');
 const { parseOCRText } = require('../backend/services/parser');
-
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
-    fileFilter(_req, file, cb) {
-        cb(null, true);
-    }
-});
-
-function runMiddleware(req, res, fn) {
-    return new Promise((resolve, reject) => {
-        fn(req, res, (result) => {
-            if (result instanceof Error) return reject(result);
-            return resolve(result);
-        });
-    });
-}
 
 // Fallback to bundled sample/pre-parsed results if available
 function getFallbackCourses() {
     try {
-        const resultsPath = path.resolve(__dirname, '../course_ocr/output/results.json');
-        if (fs.existsSync(resultsPath)) {
-            const raw = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-            const { transformResults } = require('../backend/services/courseOcrService');
-            return transformResults(raw);
+        const candidates = [
+            path.resolve(__dirname, '../course_ocr/output/results.json'),
+            path.resolve(process.cwd(), 'course_ocr/output/results.json'),
+            '/var/task/course_ocr/output/results.json'
+        ];
+        for (const p of candidates) {
+            if (fs.existsSync(p)) {
+                const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
+                const { transformResults } = require('../backend/services/courseOcrService');
+                return transformResults(raw);
+            }
         }
     } catch (_) {}
     return [];
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -48,14 +37,14 @@ module.exports = async function handler(req, res) {
         return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
+    let files = [];
     try {
-        await runMiddleware(req, res, upload.any());
+        files = await parseMultipart(req, 50 * 1024 * 1024);
     } catch (err) {
-        return res.status(400).json({ success: false, error: err.message });
+        return res.status(400).json({ success: false, error: err.message || 'Failed to parse upload.' });
     }
 
     try {
-        const files = req.files || (req.file ? [req.file] : []);
         if (!files || files.length === 0) {
             return res.status(400).json({ success: false, error: 'No PDF or ZIP files provided.' });
         }
@@ -84,13 +73,18 @@ module.exports = async function handler(req, res) {
             console.log('Python course_ocr not available, parsing in Node:', pythonErr.message);
         }
 
-        // Parse in Node.js using pdf-parse if available
+        // Parse in Node.js using pdf-parse and ocrService
         let allCourses = [];
         try {
             const { PDFParse } = require('pdf-parse');
             const { extractTextFromImage } = require('../backend/services/ocrService');
+
             for (const f of files) {
-                if (f.mimetype === 'application/pdf' || f.originalname.toLowerCase().endsWith('.pdf')) {
+                const nameLower = (f.originalname || '').toLowerCase();
+                const isPdf = f.mimetype === 'application/pdf' || nameLower.endsWith('.pdf');
+                const isImg = (f.mimetype && f.mimetype.startsWith('image/')) || /\.(png|jpe?g|webp)$/i.test(nameLower);
+
+                if (isPdf) {
                     const parser = new PDFParse({ data: new Uint8Array(f.buffer) });
                     const textRes = await parser.getText();
                     let rawText = textRes ? textRes.text : '';
@@ -101,9 +95,10 @@ module.exports = async function handler(req, res) {
                         try {
                             const imgRes = await parser.getImage({ imageBuffer: true });
                             if (imgRes && imgRes.pages) {
-                                for (const p of imgRes.pages) {
+                                // Process up to first 2 pages
+                                for (const p of imgRes.pages.slice(0, 2)) {
                                     if (p.images && p.images.length > 0) {
-                                        // Take the largest image on the page (the page screenshot/scan)
+                                        // Take the largest image on the page
                                         const sorted = p.images.slice().sort((a, b) => (b.data ? b.data.length : 0) - (a.data ? a.data.length : 0));
                                         const mainImg = sorted[0];
                                         if (mainImg && mainImg.data && mainImg.data.length > 20000) {
@@ -129,6 +124,15 @@ module.exports = async function handler(req, res) {
                     try {
                         if (typeof parser.destroy === 'function') await parser.destroy();
                     } catch (_) {}
+                } else if (isImg) {
+                    const ocr = await extractTextFromImage(f.buffer);
+                    const txt = typeof ocr === 'string' ? ocr : (ocr.text || '');
+                    if (txt && txt.trim().length > 20) {
+                        const parsed = parseOCRText(txt);
+                        if (parsed.courses && parsed.courses.length > 0) {
+                            allCourses.push(...parsed.courses);
+                        }
+                    }
                 }
             }
         } catch (parseErr) {
@@ -139,20 +143,35 @@ module.exports = async function handler(req, res) {
             allCourses = getFallbackCourses();
         }
 
+        // Deduplicate courses
+        const uniqueCourses = [];
+        const seen = new Set();
+        for (const c of allCourses) {
+            const k = (c.code || c.name || '').toUpperCase();
+            if (!seen.has(k)) {
+                seen.add(k);
+                uniqueCourses.push(c);
+            }
+        }
+
         return res.json({
             success: true,
             totalFiles: files.length,
-            courses: allCourses
+            courses: uniqueCourses
         });
-
     } catch (err) {
-        console.error('PDF OCR error:', err);
-        const fallback = getFallbackCourses();
-        return res.json({
-            success: true,
-            totalFiles: 1,
-            courses: fallback
+        console.error('PDF processing error:', err);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to process file(s).',
+            detail: err.message
         });
     }
-};
+}
 
+module.exports = handler;
+module.exports.config = {
+    api: {
+        bodyParser: false,
+    },
+};
