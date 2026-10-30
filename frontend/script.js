@@ -1827,11 +1827,9 @@ async function uploadScreenshot() {
     return;
   }
 
-  const files = fileInput.files;
+  const file = fileInput.files[0];
   const formData = new FormData();
-  for (let i = 0; i < files.length; i++) {
-    formData.append("image", files[i]);
-  }
+  formData.append("image", file);
 
   status.className = "ocr-status info";
   status.style.display = "flex";
@@ -1960,7 +1958,7 @@ function printTimetable() {
 // Modern Toast Notification System
 function showToast(message, type = "info") {
   // Strip duplicate leading checkmarks or emoji symbols
-  let cleanMessage = String(message || '').replace(/^[\s✓✔✅☑️⚠️ℹ️❌✗\-\:\.]+/u, '').trim();
+  let cleanMessage = String(message || '').replace(/^[✓✔✅☑️⚠️ℹ️❌✗\s\-:.]+/g, '').trim();
 
   let container = document.getElementById('toast-container');
   if (!container) {

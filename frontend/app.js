@@ -1170,6 +1170,19 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
         return;
     }
 
+    // If another option for this same course was already placed of the same slotType, switch (remove previous selection)
+    const prevCourse = selectedCourses.find(
+        c => c.type === slotType && ((courseCode && c.code === courseCode) || c.name.toLowerCase() === courseName.toLowerCase())
+    );
+    if (prevCourse) {
+        removeCourse(prevCourse.id);
+        for (const [k, id] of placedOcrSlots.entries()) {
+            if (id === prevCourse.id) {
+                placedOcrSlots.delete(k);
+            }
+        }
+    }
+
     // Split compound slots (e.g. "B1" or "A1+TA1" or "L1+L2")
     const slots = slotStr.split('+').map(s => s.trim());
 
@@ -1537,7 +1550,7 @@ function printTimetable() {
 // Modern Toast Notification System
 function showToast(message, type = "info") {
   // Strip duplicate leading checkmarks or emoji symbols
-  let cleanMessage = String(message || '').replace(/^[\s✓✔✅☑️⚠️ℹ️❌✗\-\:\.]+/u, '').trim();
+  let cleanMessage = String(message || '').replace(/^[✓✔✅☑️⚠️ℹ️❌✗\s\-:.]+/g, '').trim();
 
   let container = document.getElementById('toast-container');
   if (!container) {
