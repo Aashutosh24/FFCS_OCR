@@ -162,11 +162,28 @@ async function extractTextFromImage(inputBuffer) {
       preserve_interword_spaces: "1",
     });
 
-    // Pass 1: Direct buffer recognition (preserves sharp font edges without downscaling blur)
-    let { data: { text, confidence } } = await worker.recognize(inputBuffer);
+    // Pass 1: Fast buffer recognition (downscale to max 2000px if massive to prevent slow OCR)
+    let pass1Buffer = inputBuffer;
+    if (sharp) {
+      try {
+        const meta = await sharp(inputBuffer).metadata();
+        if (meta && meta.width && meta.width > 2000) {
+          pass1Buffer = await sharp(inputBuffer).resize({ width: 2000 }).toBuffer();
+        }
+      } catch (_) {}
+    }
+
+    let { data: { text, confidence } } = await worker.recognize(pass1Buffer);
 
     // If text already has strong course signals, return immediately
     if (text && textHasCourseSignals(text) && text.trim().length > 30) {
+      return { text: text || "", confidence: confidence || 0 };
+    }
+
+    // If image already yielded clear readable text (>80 chars) but no course signals,
+    // it is a decorative header, logo, or student timetable calendar.
+    // Avoid running 4 more heavy passes that would waste 30-50s and trigger Vercel 504 timeouts.
+    if (text && text.trim().length > 80) {
       return { text: text || "", confidence: confidence || 0 };
     }
 

@@ -54,13 +54,13 @@ function extractSlotOfferingFromLine(line, slotsOnLine) {
         const slotPartIdx = parts.findIndex(p => extractAllSlotsFromLine(p).length > 0);
         if (slotPartIdx !== -1) {
             const remainingParts = parts.slice(slotPartIdx + 1);
-            // Venue: e.g. CB-423, SJT-101, MB-201, TT-401, etc.
-            const venueIdx = remainingParts.findIndex(p => /^[A-Z0-9]{2,6}[-\s]?[A-Z0-9]{2,5}$/i.test(p));
+            // Venue: e.g. CB-423, SJT-101, MB-201, TT-401, etc. (exclude AVAILABILITY keywords)
+            const venueIdx = remainingParts.findIndex(p => /^(?!FULL|AVL|AVAIL|FREE|REG|N\/A)[A-Z0-9]{2,6}[-\s]?[A-Z0-9]{2,5}$/i.test(p));
             if (venueIdx !== -1) {
                 venue = remainingParts[venueIdx];
                 const afterVenue = remainingParts.slice(venueIdx + 1);
-                // Non-faculty tail: CBL, PBL, RBL, 0, etc.
-                const nonFacultyIdx = afterVenue.findIndex(p => /^(CBL|PBL|RBL|REGULAR|ONLINE|OFFLINE|\d+)$/i.test(p));
+                // Non-faculty tail: CBL, PBL, RBL, 0, FULL, etc.
+                const nonFacultyIdx = afterVenue.findIndex(p => /^(CBL|PBL|RBL|REGULAR|ONLINE|OFFLINE|FULL|AVAIL|AVL|\d+)$/i.test(p));
                 if (nonFacultyIdx !== -1) {
                     faculty = afterVenue.slice(0, nonFacultyIdx).join(' ');
                     mode = afterVenue[nonFacultyIdx];
@@ -89,6 +89,7 @@ function extractSlotOfferingFromLine(line, slotsOnLine) {
     // Clean faculty string
     faculty = faculty
         .replace(/^[^a-zA-Z]+/, '')
+        .replace(/\b(FULL|AVAILABLE|REGISTERED|REGULAR)\b/gi, '')
         .replace(/\s*\([^)]*\)\s*$/g, '')
         .replace(/(\s+[a-zA-Z0-9]{1,2})+\s*$/g, '')
         .replace(/[^a-zA-Z\.\s]+$/, '')
@@ -238,21 +239,28 @@ function parseOCRText(rawText) {
             }
 
             if (targetCourse && offering) {
-                targetCourse.offerings.push(offering);
-                if (offering.type === 'lab') {
-                    targetCourse.labSlots.push(offering);
-                } else {
-                    targetCourse.theorySlots.push(offering);
-                }
+                const isDup = targetCourse.offerings.some(o =>
+                    o.slot.toUpperCase() === offering.slot.toUpperCase() &&
+                    o.faculty.toLowerCase() === offering.faculty.toLowerCase() &&
+                    (o.venue === offering.venue || o.venue === 'TBA' || offering.venue === 'TBA')
+                );
+                if (!isDup) {
+                    targetCourse.offerings.push(offering);
+                    if (offering.type === 'lab') {
+                        targetCourse.labSlots.push(offering);
+                    } else {
+                        targetCourse.theorySlots.push(offering);
+                    }
 
-                if (!targetCourse.slots.includes(offering.slot)) {
-                    targetCourse.slots.push(offering.slot);
-                }
+                    if (!targetCourse.slots.includes(offering.slot)) {
+                        targetCourse.slots.push(offering.slot);
+                    }
 
-                const optKey = offering.slot.split('+').sort().join('+');
-                const alreadyHas = targetCourse.options.some(opt => opt.slice().sort().join('+') === optKey);
-                if (!alreadyHas) {
-                    targetCourse.options.push(offering.slot.split('+'));
+                    const optKey = offering.slot.split('+').sort().join('+');
+                    const alreadyHas = targetCourse.options.some(opt => opt.slice().sort().join('+') === optKey);
+                    if (!alreadyHas) {
+                        targetCourse.options.push(offering.slot.split('+'));
+                    }
                 }
             } else if (!targetCourse && offering) {
                 // Orphaned slot row

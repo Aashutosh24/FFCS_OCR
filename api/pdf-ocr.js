@@ -7,25 +7,53 @@ const { parseOCRText } = require('../backend/services/parser');
 
 /**
  * Extract embedded JPEG images directly from a PDF buffer without canvas/DOMMatrix.
+ * Filters out duplicate color planes, extreme aspect ratio divider lines, and empty chrome.
  * Preserves the natural reading order (offset) from page 1 to the end of the document.
  */
-function extractJpegsFromPdf(buffer) {
+function extractSmartSlices(buffer) {
     const jpegs = [];
     let start = 0;
     while ((start = buffer.indexOf(Buffer.from([0xFF, 0xD8, 0xFF]), start)) !== -1) {
         const end = buffer.indexOf(Buffer.from([0xFF, 0xD9]), start + 2);
         if (end !== -1) {
-            jpegs.push({ offset: start, data: buffer.subarray(start, end + 2) });
+            const data = buffer.subarray(start, end + 2);
+            // Parse dimensions from JPEG SOF markers
+            let w = 0, h = 0;
+            for (let k = 0; k < data.length - 8; k++) {
+                if (data[k] === 0xFF && (data[k + 1] === 0xC0 || data[k + 1] === 0xC2)) {
+                    h = data.readUInt16BE(k + 5);
+                    w = data.readUInt16BE(k + 7);
+                    break;
+                }
+            }
+            jpegs.push({ offset: start, size: data.length, data, w, h });
             start = end + 2;
         } else {
             break;
         }
     }
-    // Filter for substantive content slices (> 30KB) in top-to-bottom document order
-    const content = jpegs.filter(j => j.data.length > 30000);
-    if (content.length > 0) return content.map(c => c.data);
-    // Fallback to top 4 by size if all slices are small
-    return jpegs.sort((a, b) => b.data.length - a.data.length).slice(0, 4).map(c => c.data);
+
+    // 1. Substantive images (> 25KB, width >= 300, height >= 150)
+    const substantive = jpegs.filter(j => j.size > 25000 && j.w >= 300 && j.h >= 150);
+
+    // 2. Filter extreme aspect ratios (divider lines, thin header strips: aspect > 4.5 or < 0.25)
+    const reasonable = substantive.filter(j => {
+        const aspect = j.w / j.h;
+        return aspect >= 0.25 && aspect <= 4.5;
+    });
+
+    // 3. Deduplicate consecutive duplicate dimensions (identical graphics / color planes)
+    const deduplicated = [];
+    for (const s of reasonable) {
+        const last = deduplicated[deduplicated.length - 1];
+        if (!last || last.w !== s.w || last.h !== s.h) {
+            deduplicated.push(s.data);
+        }
+    }
+
+    if (deduplicated.length > 0) return deduplicated.slice(0, 6);
+    // Fallback if metadata extraction was inconclusive
+    return jpegs.sort((a, b) => b.size - a.size).slice(0, 4).map(c => c.data);
 }
 
 async function handler(req, res) {
@@ -75,7 +103,7 @@ async function handler(req, res) {
 
                 // Step 2: If scanned PDF (no selectable text), extract all embedded page images in order and OCR
                 if (cleaned.length < 20) {
-                    const slices = extractJpegsFromPdf(f.buffer);
+                    const slices = extractSmartSlices(f.buffer);
                     if (slices.length > 0) {
                         for (const slice of slices) {
                             try {
