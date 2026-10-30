@@ -1,54 +1,63 @@
 [
   {
-    "source_file": "GERMAN.pdf",
-    "course_code": "FRL1005",
-    "course_name": "German for Beginners",
-    "component_type": "Theory Only",
-    "credit": "2.0",
+    "source_file": "SWE3003.pdf",
+    "course_code": "SWE3003",
+    "course_name": "Information and System Security",
+    "component_type": "Embedded Theory and Lab",
+    "credit": "4.0",
     "theory_slots": [
       {
-        "slot": "G2",
-        "venue": "AB2-G17",
-        "faculty": "Prof. VISH Dig Crs Faculty-1",
+        "slot": "C2+TC2",
+        "venue": "CB-322",
+        "faculty": "TARUN NARAYAN SHANKAR",
         "flags": []
       },
       {
-        "slot": "A2",
-        "venue": "AB2-G19",
-        "faculty": "VELMALA SHARATH KUMAR",
+        "slot": "C2+TC2",
+        "venue": "CB-323",
+        "faculty": "Adla Padma",
         "flags": []
       },
       {
-        "slot": "F2",
-        "venue": "AB2-220",
-        "faculty": "VELMALA SHARATH KUMAR",
-        "flags": []
-      },
-      {
-        "slot": "B2",
-        "venue": "CB-423",
-        "faculty": "Prof.VISH Dig Crs Faculty-1",
-        "flags": []
-      },
-      {
-        "slot": "G1",
-        "venue": "AB2-G17",
-        "faculty": "Renuprasad Hemkiran Patki",
-        "flags": []
-      },
-      {
-        "slot": "A2",
-        "venue": "AB2-220",
-        "faculty": "Renuprasad Hemkiran Patki",
+        "slot": "C1+TC1",
+        "venue": "CB-519",
+        "faculty": "Adla Padma",
         "flags": []
       }
     ],
-    "lab_slots": [],
+    "lab_slots": [
+      {
+        "slot": "L24",
+        "venue": null,
+        "faculty": "UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION",
+        "flags": [
+          "missing_venue"
+        ]
+      },
+      {
+        "slot": "L1+L2",
+        "venue": "CB-105",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L21+L22",
+        "venue": "CB-405",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-20",
+        "flags": []
+      },
+      {
+        "slot": "L45+L46",
+        "venue": "CB-409",
+        "faculty": "TARUN NARAYAN SHANKAR",
+        "flags": []
+      }
+    ],
     "needs_ocr": true,
-    "pages": 1,
+    "pages": 2,
     "warnings": [],
     "error": null,
     "missing_fields": [],
-    "confidence": "ok"
+    "confidence": "review"
   }
 ]

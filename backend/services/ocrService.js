@@ -162,13 +162,19 @@ async function extractTextFromImage(inputBuffer) {
       preserve_interword_spaces: "1",
     });
 
-    // Pass 1: Standard enhanced grayscale
-    const grayBuffer = (await preprocessGrayscale(inputBuffer)) || inputBuffer;
-    let { data: { text, confidence } } = await worker.recognize(grayBuffer);
+    // Pass 1: Direct buffer recognition (preserves sharp font edges without downscaling blur)
+    let { data: { text, confidence } } = await worker.recognize(inputBuffer);
 
     // If text already has strong course signals, return immediately
     if (text && textHasCourseSignals(text) && text.trim().length > 30) {
       return { text: text || "", confidence: confidence || 0 };
+    }
+
+    // Pass 2: Standard enhanced grayscale
+    const grayBuffer = (await preprocessGrayscale(inputBuffer)) || inputBuffer;
+    const resGray = await worker.recognize(grayBuffer);
+    if (resGray.data.text && textHasCourseSignals(resGray.data.text)) {
+      return { text: resGray.data.text, confidence: resGray.data.confidence };
     }
 
     // Pass 2: Red channel separation

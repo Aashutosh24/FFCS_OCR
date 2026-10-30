@@ -1,26 +1,32 @@
 'use strict';
-const { PDFParse } = require('pdf-parse');
+
+const pdfParse = require('pdf-parse');
 const { parseMultipart } = require('../backend/services/multipart');
 const { extractTextFromImage } = require('../backend/services/ocrService');
 const { parseOCRText } = require('../backend/services/parser');
 
-// Helper to extract embedded JPEG images directly from a PDF buffer without canvas
+/**
+ * Extract embedded JPEG images directly from a PDF buffer without canvas/DOMMatrix.
+ * Preserves the natural reading order (offset) from page 1 to the end of the document.
+ */
 function extractJpegsFromPdf(buffer) {
     const jpegs = [];
     let start = 0;
     while ((start = buffer.indexOf(Buffer.from([0xFF, 0xD8, 0xFF]), start)) !== -1) {
         const end = buffer.indexOf(Buffer.from([0xFF, 0xD9]), start + 2);
         if (end !== -1) {
-            jpegs.push(buffer.subarray(start, end + 2));
+            jpegs.push({ offset: start, data: buffer.subarray(start, end + 2) });
             start = end + 2;
         } else {
             break;
         }
     }
-    return jpegs.sort((a, b) => b.length - a.length);
+    // Filter for substantive content slices (> 30KB) in top-to-bottom document order
+    const content = jpegs.filter(j => j.data.length > 30000);
+    if (content.length > 0) return content.map(c => c.data);
+    // Fallback to top 4 by size if all slices are small
+    return jpegs.sort((a, b) => b.data.length - a.data.length).slice(0, 4).map(c => c.data);
 }
-
-
 
 async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,7 +54,6 @@ async function handler(req, res) {
         }
 
         let allCourses = [];
-        const pdfParse = require('pdf-parse');
 
         for (const f of files.slice(0, 3)) {
             const nameLower = (f.originalname || '').toLowerCase();
@@ -62,26 +67,26 @@ async function handler(req, res) {
                 try {
                     const pdfData = await pdfParse(f.buffer);
                     rawText = pdfData.text || '';
-
-                    console.log(
-                        `PDF text extraction completed: ${pdfData.numpages} pages, ${rawText.length} characters`
-                    );
                 } catch (pdfErr) {
-                    console.error('PDF text extraction failed:', pdfErr);
-                    throw new Error(`Could not extract PDF text: ${pdfErr.message}`);
+                    console.warn('Direct PDF text extraction note:', pdfErr.message);
                 }
 
                 const cleaned = rawText.replace(/--\s*\d+\s+of\s+\d+\s*--/g, '').trim();
 
-                // Step 2: If scanned PDF (no selectable text), extract embedded JPEGs and OCR
+                // Step 2: If scanned PDF (no selectable text), extract all embedded page images in order and OCR
                 if (cleaned.length < 20) {
-                    const jpegs = extractJpegsFromPdf(f.buffer);
-                    if (jpegs.length > 0) {
-                        try {
-                            const ocr = await extractTextFromImage(jpegs[0]);
-                            rawText = typeof ocr === 'string' ? ocr : (ocr.text || '');
-                        } catch (ocrErr) {
-                            console.warn('PDF embedded image OCR notice:', ocrErr.message);
+                    const slices = extractJpegsFromPdf(f.buffer);
+                    if (slices.length > 0) {
+                        for (const slice of slices) {
+                            try {
+                                const ocr = await extractTextFromImage(slice);
+                                const txt = typeof ocr === 'string' ? ocr : (ocr.text || '');
+                                if (txt && txt.trim()) {
+                                    rawText += '\n\n' + txt;
+                                }
+                            } catch (ocrErr) {
+                                console.warn('PDF embedded image OCR notice:', ocrErr.message);
+                            }
                         }
                     }
                 }

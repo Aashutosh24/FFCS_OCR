@@ -31,6 +31,8 @@ function cleanCourseName(rawName) {
     return rawName
         .replace(/^[\s\-–:\d\.\(\)]+/, '')
         .replace(/[\s\-–:\d\.\(\)]+$/, '')
+        .replace(/[\-–\s]*(?:Embedded\b.*|Theory\s+Only\b.*|Lab\s+Only\b.*)$/i, '')
+        .replace(/[\s\-–:\d\.\(\)]+$/, '')
         .replace(/\s{2,}/g, ' ')
         .trim();
 }
@@ -87,6 +89,8 @@ function extractSlotOfferingFromLine(line, slotsOnLine) {
     // Clean faculty string
     faculty = faculty
         .replace(/^[^a-zA-Z]+/, '')
+        .replace(/\s*\([^)]*\)\s*$/g, '')
+        .replace(/(\s+[a-zA-Z0-9]{1,2})+\s*$/g, '')
         .replace(/[^a-zA-Z\.\s]+$/, '')
         .replace(/\s{2,}/g, ' ')
         .trim();

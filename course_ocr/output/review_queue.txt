@@ -1,1 +1,2 @@
-Nothing needs review — every course parsed with confidence: ok.
+SWE3003.pdf  (confidence: review)
+    - [lab] L24 | venue=None faculty='UNIVERSITY FALL SEMESTER 2026-27 REGISTRATION' -- missing_venue
