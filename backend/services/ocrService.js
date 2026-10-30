@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const sharp = require("sharp");
+let sharp = null;
+try {
+  sharp = require("sharp");
+} catch (e) {
+  console.warn("sharp module not available, using raw buffer:", e.message);
+}
 const { createWorker } = require("tesseract.js");
 
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined;
@@ -27,17 +32,22 @@ const LANG_PATH = getLangPath();
  * Scale image up if it is small or low DPI, for optimal Tesseract recognition
  */
 async function preparePipeline(inputBuffer, scaleUp = true) {
-  let pipeline = sharp(inputBuffer).rotate();
-  if (scaleUp) {
-    const meta = await sharp(inputBuffer).metadata();
-    if (meta.width && meta.width < 1600) {
-      pipeline = pipeline.resize({
-        width: Math.min(meta.width * 2, 2400),
-        kernel: "lanczos3",
-      });
+  if (!sharp) return null;
+  try {
+    let pipeline = sharp(inputBuffer).rotate();
+    if (scaleUp) {
+      const meta = await sharp(inputBuffer).metadata();
+      if (meta && meta.width && meta.width < 1600) {
+        pipeline = pipeline.resize({
+          width: Math.min(meta.width * 2, 2400),
+          kernel: "lanczos3",
+        });
+      }
     }
+    return pipeline;
+  } catch (_) {
+    return null;
   }
-  return pipeline;
 }
 
 /**
@@ -45,11 +55,16 @@ async function preparePipeline(inputBuffer, scaleUp = true) {
  */
 async function preprocessGrayscale(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
-  return await p
-    .grayscale()
-    .normalize()
-    .sharpen({ sigma: 1.2 })
-    .toBuffer();
+  if (!p) return inputBuffer;
+  try {
+    return await p
+      .grayscale()
+      .normalize()
+      .sharpen({ sigma: 1.2 })
+      .toBuffer();
+  } catch (_) {
+    return inputBuffer;
+  }
 }
 
 /**
@@ -58,11 +73,16 @@ async function preprocessGrayscale(inputBuffer) {
  */
 async function preprocessRedChannel(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
-  return await p
-    .extractChannel("red")
-    .normalize()
-    .sharpen({ sigma: 1.5 })
-    .toBuffer();
+  if (!p) return null;
+  try {
+    return await p
+      .extractChannel("red")
+      .normalize()
+      .sharpen({ sigma: 1.5 })
+      .toBuffer();
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -71,11 +91,16 @@ async function preprocessRedChannel(inputBuffer) {
  */
 async function preprocessBlueChannel(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
-  return await p
-    .extractChannel("blue")
-    .normalize()
-    .sharpen({ sigma: 1.5 })
-    .toBuffer();
+  if (!p) return null;
+  try {
+    return await p
+      .extractChannel("blue")
+      .normalize()
+      .sharpen({ sigma: 1.5 })
+      .toBuffer();
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -83,12 +108,17 @@ async function preprocessBlueChannel(inputBuffer) {
  */
 async function preprocessThreshold(inputBuffer) {
   const p = await preparePipeline(inputBuffer);
-  return await p
-    .grayscale()
-    .normalize()
-    .sharpen()
-    .threshold(160)
-    .toBuffer();
+  if (!p) return null;
+  try {
+    return await p
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .threshold(160)
+      .toBuffer();
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -116,7 +146,7 @@ async function extractTextFromImage(inputBuffer) {
     });
 
     // Pass 1: Standard enhanced grayscale
-    const grayBuffer = await preprocessGrayscale(inputBuffer);
+    const grayBuffer = (await preprocessGrayscale(inputBuffer)) || inputBuffer;
     let { data: { text, confidence } } = await worker.recognize(grayBuffer);
 
     // If text already has strong course signals, return immediately
@@ -127,6 +157,7 @@ async function extractTextFromImage(inputBuffer) {
     // Pass 2: Red channel separation (handles red/orange timetable cards with blue/cyan text)
     try {
       const redBuffer = await preprocessRedChannel(inputBuffer);
+      if (!redBuffer) throw new Error("no red channel");
       const resRed = await worker.recognize(redBuffer);
       if (resRed.data.text && textHasCourseSignals(resRed.data.text)) {
         return { text: resRed.data.text, confidence: resRed.data.confidence };
@@ -140,6 +171,7 @@ async function extractTextFromImage(inputBuffer) {
     // Pass 3: Blue channel separation (handles blue/cyan timetable cards)
     try {
       const blueBuffer = await preprocessBlueChannel(inputBuffer);
+      if (!blueBuffer) throw new Error("no blue channel");
       const resBlue = await worker.recognize(blueBuffer);
       if (resBlue.data.text && textHasCourseSignals(resBlue.data.text)) {
         return { text: resBlue.data.text, confidence: resBlue.data.confidence };
@@ -154,6 +186,7 @@ async function extractTextFromImage(inputBuffer) {
     if (!text || text.trim().length < 20) {
       try {
         const thresholdBuffer = await preprocessThreshold(inputBuffer);
+        if (!thresholdBuffer) throw new Error("no threshold");
         const resThresh = await worker.recognize(thresholdBuffer);
         if (resThresh.data.text && resThresh.data.text.trim().length > (text ? text.trim().length : 0)) {
           text = resThresh.data.text;

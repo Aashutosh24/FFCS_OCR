@@ -88,16 +88,47 @@ module.exports = async function handler(req, res) {
         let allCourses = [];
         try {
             const { PDFParse } = require('pdf-parse');
+            const { extractTextFromImage } = require('../backend/services/ocrService');
             for (const f of files) {
                 if (f.mimetype === 'application/pdf' || f.originalname.toLowerCase().endsWith('.pdf')) {
-                    const parser = new PDFParse(new Uint8Array(f.buffer));
+                    const parser = new PDFParse({ data: new Uint8Array(f.buffer) });
                     const textRes = await parser.getText();
-                    if (textRes && textRes.text && textRes.text.trim().length > 20) {
-                        const parsed = parseOCRText(textRes.text);
+                    let rawText = textRes ? textRes.text : '';
+                    const cleaned = rawText.replace(/--\s*\d+\s+of\s+\d+\s*--/g, '').trim();
+
+                    // If PDF has no direct text layer (scanned PDF), extract page images and OCR them
+                    if (!cleaned || cleaned.length < 20) {
+                        try {
+                            const imgRes = await parser.getImage({ imageBuffer: true });
+                            if (imgRes && imgRes.pages) {
+                                for (const p of imgRes.pages) {
+                                    if (p.images && p.images.length > 0) {
+                                        // Take the largest image on the page (the page screenshot/scan)
+                                        const sorted = p.images.slice().sort((a, b) => (b.data ? b.data.length : 0) - (a.data ? a.data.length : 0));
+                                        const mainImg = sorted[0];
+                                        if (mainImg && mainImg.data && mainImg.data.length > 20000) {
+                                            const ocr = await extractTextFromImage(mainImg.data);
+                                            const txt = typeof ocr === 'string' ? ocr : (ocr.text || '');
+                                            rawText += (rawText ? '\n\n' : '') + txt;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (imgErr) {
+                            console.warn('PDF image extraction notice:', imgErr.message);
+                        }
+                    }
+
+                    if (rawText && rawText.trim().length > 20) {
+                        const parsed = parseOCRText(rawText);
                         if (parsed.courses && parsed.courses.length > 0) {
                             allCourses.push(...parsed.courses);
                         }
                     }
+
+                    try {
+                        if (typeof parser.destroy === 'function') await parser.destroy();
+                    } catch (_) {}
                 }
             }
         } catch (parseErr) {

@@ -1030,6 +1030,31 @@ function showClashAlert(clashes, courseName, slot, courseType) {
   setTimeout(() => {
     hideClashAlert();
   }, 10000);
+
+  // Trigger floating UI pop-up toast with exact conflict details
+  const firstClash = clashes[0];
+  const exCourse = firstClash?.existingCourse;
+  const exName = exCourse ? exCourse.name : "another course";
+  const exType = exCourse?.type ? exCourse.type.toUpperCase() : (firstClash?.conflictType?.includes("lab") ? "LAB" : "THEORY");
+  const exSlot = exCourse?.slot || "";
+
+  showToast(
+    `Cannot add ${courseName} [${slot}]`,
+    "error",
+    {
+      courseName,
+      slot,
+      courseType,
+      conflicts: clashes.map((c) => ({
+        course: c.existingCourse?.name || "another course",
+        type: c.existingCourse?.type ? c.existingCourse.type.toUpperCase() : (c.conflictType?.includes("lab") ? "LAB" : "THEORY"),
+        slot: c.existingCourse?.slot || "",
+        day: c.day,
+        timeSlot: c.timeSlot,
+      })),
+      totalClashes: clashes.length,
+    }
+  );
 }
 
 function hideClashAlert() {
@@ -1720,10 +1745,6 @@ function toggleOcrSlot(courseIdx, slotIdx, slotType, btnEl) {
   const clashes = checkForClashes(slots, slotType, courseTitle);
   if (clashes.length > 0) {
     showClashAlert(clashes, courseTitle, slotStr, slotType);
-    showToast(
-      `Clash detected for ${courseTitle} (${slotStr})! Check the alert above.`,
-      "error",
-    );
     refreshOcrCourseButtons(courseCode);
     return;
   }
@@ -1956,7 +1977,7 @@ function printTimetable() {
 }
 
 // Modern Toast Notification System
-function showToast(message, type = "info") {
+function showToast(message, type = "info", clashInfo = null) {
   // Strip duplicate leading checkmarks or emoji symbols
   let cleanMessage = String(message || '').replace(/^[✓✔✅☑️⚠️ℹ️❌✗\s\-:.]+/g, '').trim();
 
@@ -1996,7 +2017,23 @@ function showToast(message, type = "info") {
   const addMatch = cleanMessage.match(/^(?:Added\s+)?(.*?)\s*\[(.*?)\]\s*(?:\((.*?)\))?\s*(?:to\s+timetable!?)?$/i);
   const removeMatch = cleanMessage.match(/^(?:Removed\s+)(.*?)\s*\[(.*?)\]\s*(?:from\s+timetable!?)?$/i);
 
-  if (addMatch && addMatch[1]) {
+    if (clashInfo && clashInfo.conflicts && clashInfo.conflicts.length > 0) {
+    const firstC = clashInfo.conflicts[0];
+    const moreCount = clashInfo.totalClashes > 1 ? ` <span style="opacity:0.8; font-size:10.5px;">(+${clashInfo.totalClashes - 1} more)</span>` : '';
+    formattedHtml = `
+      <div class="toast-header-row">
+        <span class="toast-badge-pill error">Scheduling Clash</span>
+      </div>
+      <div class="toast-course-name">Cannot add ${escapeHtml(clashInfo.courseName)}</div>
+      <div class="toast-meta-row">
+        <span class="toast-slot-tag" style="background:rgba(239,68,68,0.18); color:#fca5a5; border-color:rgba(239,68,68,0.35);">${escapeHtml(clashInfo.slot)}</span>
+        <span class="toast-faculty-tag">${escapeHtml((clashInfo.courseType || '').toUpperCase())}</span>
+      </div>
+      <div class="toast-clash-box">
+        ⚠️ <strong>Clashes with:</strong> <span class="toast-clash-highlight">${escapeHtml(firstC.course)}</span> (${escapeHtml(firstC.type)}${firstC.slot ? ' • ' + escapeHtml(firstC.slot) : ''}) on <strong>${escapeHtml(firstC.day)} ${escapeHtml(firstC.timeSlot)}</strong>${moreCount}
+      </div>
+    `;
+  } else if (addMatch && addMatch[1]) {
     const course = addMatch[1].trim();
     const slot = (addMatch[2] || '').trim();
     const faculty = (addMatch[3] || '').trim();
