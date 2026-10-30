@@ -1,7 +1,5 @@
 'use strict';
-
-const path = require('path');
-const fs = require('fs');
+const { PDFParse } = require('pdf-parse');
 const { parseMultipart } = require('../backend/services/multipart');
 const { extractTextFromImage } = require('../backend/services/ocrService');
 const { parseOCRText } = require('../backend/services/parser');
@@ -22,41 +20,7 @@ function extractJpegsFromPdf(buffer) {
     return jpegs.sort((a, b) => b.length - a.length);
 }
 
-// Fallback to bundled sample/pre-parsed results if available
-function getFallbackCourses() {
-    try {
-        const candidates = [
-            path.resolve(__dirname, '../backend/results.json'),
-            path.resolve(process.cwd(), 'backend/results.json'),
-            '/var/task/backend/results.json',
-            path.resolve(__dirname, '../course_ocr/output/results.json'),
-            path.resolve(process.cwd(), 'course_ocr/output/results.json'),
-        ];
-        for (const p of candidates) {
-            if (fs.existsSync(p)) {
-                const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-                // Transform to frontend course item shape
-                return raw.map(item => ({
-                    code: item.course_code || '',
-                    name: item.course_name || item.course_code || '',
-                    component: item.component_type || 'Theory',
-                    credit: parseFloat(item.credit) || 3,
-                    theorySlots: (item.theory_slots || []).map(s => ({
-                        slot: s.slot,
-                        venue: s.venue || 'TBA',
-                        faculty: s.faculty || 'TBA'
-                    })),
-                    labSlots: (item.lab_slots || []).map(s => ({
-                        slot: s.slot,
-                        venue: s.venue || 'TBA',
-                        faculty: s.faculty || 'TBA'
-                    }))
-                }));
-            }
-        }
-    } catch (_) {}
-    return [];
-}
+
 
 async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -84,7 +48,7 @@ async function handler(req, res) {
         }
 
         let allCourses = [];
-        const { PDFParse } = require('pdf-parse');
+        const pdfParse = require('pdf-parse');
 
         for (const f of files.slice(0, 3)) {
             const nameLower = (f.originalname || '').toLowerCase();
@@ -96,12 +60,15 @@ async function handler(req, res) {
 
                 // Step 1: Direct selectable text extraction (instant)
                 try {
-                    const parser = new PDFParse({ data: new Uint8Array(f.buffer) });
-                    const textRes = await parser.getText();
-                    rawText = textRes ? textRes.text : '';
-                    try { if (typeof parser.destroy === 'function') await parser.destroy(); } catch (_) {}
+                    const pdfData = await pdfParse(f.buffer);
+                    rawText = pdfData.text || '';
+
+                    console.log(
+                        `PDF text extraction completed: ${pdfData.numpages} pages, ${rawText.length} characters`
+                    );
                 } catch (pdfErr) {
-                    console.warn('PDF text parse note:', pdfErr.message);
+                    console.error('PDF text extraction failed:', pdfErr);
+                    throw new Error(`Could not extract PDF text: ${pdfErr.message}`);
                 }
 
                 const cleaned = rawText.replace(/--\s*\d+\s+of\s+\d+\s*--/g, '').trim();
@@ -142,7 +109,12 @@ async function handler(req, res) {
         }
 
         if (allCourses.length === 0) {
-            allCourses = getFallbackCourses();
+            return res.status(422).json({
+                success: false,
+                error: 'No course information could be extracted from the uploaded files.',
+                totalFiles: files.length,
+                courses: []
+            });
         }
 
         // Deduplicate courses by code or name
