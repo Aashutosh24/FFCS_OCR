@@ -1,51 +1,88 @@
 [
   {
-    "source_file": "GERMAN.pdf",
-    "course_code": "FRL1005",
-    "course_name": "German for Beginners",
-    "component_type": "Theory Only",
-    "credit": "2.0",
+    "source_file": "SWE2009.pdf",
+    "course_code": "SWE2009",
+    "course_name": "Analysis of Algorithms",
+    "component_type": "Embedded Theory",
+    "credit": "4.0",
     "theory_slots": [
       {
-        "slot": "G2",
-        "venue": "AB2-G17",
-        "faculty": "Prof. VISH Dig Crs Faculty-1",
+        "slot": "A2+TA2",
+        "venue": "CB-520",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-3",
         "flags": []
       },
       {
-        "slot": "A2",
-        "venue": "AB2-G19",
-        "faculty": "VELMALA SHARATH KUMAR",
+        "slot": "A2+TA2",
+        "venue": "CB-521",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
         "flags": []
       },
       {
-        "slot": "F2",
-        "venue": "AB2-220",
-        "faculty": "VELMALA SHARATH KUMAR",
-        "flags": []
-      },
-      {
-        "slot": "B2",
+        "slot": "A1+TA1",
         "venue": "CB-423",
-        "faculty": "Prof.VISH Dig Crs Faculty-1",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
         "flags": []
       },
       {
-        "slot": "G1",
-        "venue": "AB2-G17",
-        "faculty": "Renuprasad Hemkiran Patki",
+        "slot": "A1+TA1",
+        "venue": "CB-317",
+        "faculty": "Rajesh Duvvuru",
         "flags": []
       },
       {
-        "slot": "A2",
-        "venue": "AB2-220",
-        "faculty": "Renuprasad Hemkiran Patki",
+        "slot": "A2+TA2",
+        "venue": "CB-523",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      },
+      {
+        "slot": "A1+TA1",
+        "venue": "CB-425",
+        "faculty": "Bileesh P Babu",
         "flags": []
       }
     ],
-    "lab_slots": [],
+    "lab_slots": [
+      {
+        "slot": "L23+L24",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L5+L6",
+        "venue": "CB-307",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-6",
+        "flags": []
+      },
+      {
+        "slot": "L9+L10",
+        "venue": "CB-303",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L7+L8",
+        "venue": "CB-321",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      },
+      {
+        "slot": "L35+L36",
+        "venue": "CB-321",
+        "faculty": "Prof.SCOPE Dig Crs Faculty-19",
+        "flags": []
+      },
+      {
+        "slot": "L43+L44",
+        "venue": "CB-302",
+        "faculty": "Bileesh P Babu",
+        "flags": []
+      }
+    ],
     "needs_ocr": true,
-    "pages": 1,
+    "pages": 3,
     "warnings": [],
     "error": null,
     "missing_fields": [],

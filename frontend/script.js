@@ -169,8 +169,8 @@ const labTimeSlots = [
   "2:50-3:40",
   "3:50-4:40",
   "4:40-5:30",
-  "5:40-6:30",
-  "6:30-7:10",
+  "6:00-6:50",
+  "6:50-7:30",
 ];
 // ✅ CORRECT SLOT MAPPINGS - MAIN SLOTS GET 2 CLASSES, T-SLOTS GET 1 CLASS
 const slotMappings = {
