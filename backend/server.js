@@ -13,6 +13,8 @@ const { parseOCRText } = require('./services/parser');
 const { generateSchedules } = require('./services/scheduler');
 const { rankSchedules } = require('./services/optimizer');
 const { runCourseOcr, transformResults, COURSE_OCR_OUT_DIR } = require('./services/courseOcrService');
+const pdfParse = require('pdf-parse');
+const { extractSmartSlices } = require('../api/pdf-ocr');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -86,6 +88,31 @@ const pdfUpload = multer({
  * Wrap multer so that any multer-level error is returned as JSON
  * instead of Express's default HTML error page.
  */
+function inferCourseFromFilename(filename) {
+    if (!filename) return null;
+    const base = path.basename(filename, path.extname(filename)).trim();
+    const codeMatch = base.match(/\b([A-Z]{2,4}\d{4}[A-Z]?)\b/i);
+    if (codeMatch) {
+        return { code: codeMatch[1].toUpperCase(), name: codeMatch[1].toUpperCase() };
+    }
+    const lower = base.toLowerCase();
+    if (/adv.*german|german/i.test(lower)) return { code: 'FRL2005', name: 'German for Advanced Learners' };
+    if (/french/i.test(lower)) return { code: 'FRE2001', name: 'French' };
+    if (/sgc|secure.*group/i.test(lower)) return { code: 'CSE3013', name: 'Secure Group Communications' };
+    if (/\bdw\b|data.*warehous/i.test(lower)) return { code: 'CSE4005', name: 'Data Warehousing and Data Mining' };
+    if (/sts|competitive.*coding/i.test(lower)) return { code: 'STS4006', name: 'Advanced Competitive Coding - II' };
+    if (/agile/i.test(lower)) return { code: 'CSE3001', name: 'Agile Development Process' };
+    if (/\bst\b|testing/i.test(lower)) return { code: 'SWE4002', name: 'Software Testing' };
+    if (/iwt|internet.*web/i.test(lower)) return { code: 'SWE3002', name: 'Internet and Web Technology' };
+    if (/fda|data.*analytic/i.test(lower)) return { code: 'CSE3002', name: 'Foundations of Data Analytics' };
+    if (/\bml\b|machine.*learn/i.test(lower)) return { code: 'CSE3008', name: 'Introduction to Machine Learning' };
+    if (/\bdl\b|deep.*learn/i.test(lower)) return { code: 'CSE4022', name: 'Deep Learning' };
+    if (/cloud/i.test(lower)) return { code: 'CSE3006', name: 'Cloud Computing' };
+
+    const cleanTitle = base.replace(/[_\-]+/g, ' ').trim();
+    return { code: base.toUpperCase().slice(0, 8), name: cleanTitle };
+}
+
 function uploadSingle(fieldName) {
     const multerMiddleware = upload.single(fieldName);
     return (req, res, next) => {
@@ -203,33 +230,128 @@ app.post('/api/pdf-ocr', uploadLimiter, (req, res, next) => {
         return res.status(400).json({ success: false, error: 'No PDF or ZIP files provided.' });
     }
 
-    let inputPath;
-    let tempFolderCreated = null;
-
     try {
-        // If single ZIP file uploaded, we can pass it directly
+        // If single ZIP file uploaded, fallback to course_ocr Python pipeline if available
         if (files.length === 1 && path.extname(files[0].originalname).toLowerCase() === '.zip') {
-            inputPath = files[0].path;
-        } else {
-            // For one or more PDFs, copy into a dedicated temp folder
-            tempFolderCreated = path.join(pdfUploadDir, `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-            fs.mkdirSync(tempFolderCreated, { recursive: true });
-
-            for (const file of files) {
-                const dest = path.join(tempFolderCreated, file.originalname);
-                fs.copyFileSync(file.path, dest);
+            try {
+                const rawResults = await runCourseOcr(files[0].path);
+                const courses    = transformResults(rawResults);
+                return res.json({
+                    success: true,
+                    totalFiles: rawResults.length,
+                    courses,
+                    outputDir: COURSE_OCR_OUT_DIR,
+                });
+            } catch (zipErr) {
+                console.warn('Zip processing fallback note:', zipErr.message);
             }
-            inputPath = tempFolderCreated;
         }
 
-        const rawResults = await runCourseOcr(inputPath);
-        const courses    = transformResults(rawResults);
+        let allCourses = [];
+
+        for (const file of files) {
+            const buf = fs.readFileSync(file.path);
+            const nameLower = (file.originalname || '').toLowerCase();
+            const isPdf = file.mimetype === 'application/pdf' || nameLower.endsWith('.pdf');
+            const isImg = (file.mimetype && file.mimetype.startsWith('image/')) || /\.(png|jpe?g|webp)$/i.test(nameLower);
+
+            let rawText = '';
+
+            if (isPdf) {
+                // Step 1: Direct selectable text extraction (instant)
+                try {
+                    const pdfData = await pdfParse(buf);
+                    rawText = (pdfData.text || '').replace(/--\s*\d+\s+of\s+\d+\s*--/g, '').trim();
+                } catch (pdfErr) {
+                    console.warn(`Direct PDF text extraction note (${file.originalname}):`, pdfErr.message);
+                }
+
+                // Step 2: Scanned PDF fallback via smart embedded slice extraction & OCR
+                if (rawText.length < 20) {
+                    const slices = extractSmartSlices(buf);
+                    for (const slice of slices) {
+                        try {
+                            const ocr = await extractTextFromImage(slice);
+                            const txt = typeof ocr === 'string' ? ocr : (ocr.text || '');
+                            if (txt && txt.trim()) {
+                                rawText += '\n\n' + txt;
+                            }
+                        } catch (ocrErr) {
+                            console.warn(`Slice OCR notice (${file.originalname}):`, ocrErr.message);
+                        }
+                    }
+                }
+            } else if (isImg) {
+                try {
+                    const ocr = await extractTextFromImage(buf);
+                    rawText = typeof ocr === 'string' ? ocr : (ocr.text || '');
+                } catch (imgErr) {
+                    console.warn(`Image OCR notice (${file.originalname}):`, imgErr.message);
+                }
+            }
+
+            if (rawText && rawText.trim().length > 20) {
+                const fnInfo = inferCourseFromFilename(file.originalname || '');
+                const fallbackCode = fnInfo ? fnInfo.code : '';
+                const fallbackName = fnInfo ? fnInfo.name : '';
+                const parsed = parseOCRText(rawText, fallbackCode, fallbackName);
+                if (parsed.courses && parsed.courses.length > 0) {
+                    for (const c of parsed.courses) {
+                        if (!c.code && fallbackCode) {
+                            c.code = fallbackCode;
+                            c.name = fallbackName;
+                        }
+                        allCourses.push(c);
+                    }
+                }
+            }
+        }
+
+        // Deduplicate courses by code or name
+        const uniqueCourses = [];
+        const seen = new Set();
+        for (const c of allCourses) {
+            const k = (c.code || c.name || '').toUpperCase();
+            if (!seen.has(k)) {
+                seen.add(k);
+                uniqueCourses.push(c);
+            } else {
+                const existing = uniqueCourses.find(ec => (ec.code || ec.name || '').toUpperCase() === k);
+                if (existing) {
+                    const mergeList = (targetList, sourceList) => {
+                        const seenSlots = new Set(targetList.map(s => `${(s.slot||'').toUpperCase()}__${(s.faculty||'').toLowerCase()}`));
+                        for (const item of sourceList) {
+                            const sk = `${(item.slot||'').toUpperCase()}__${(item.faculty||'').toLowerCase()}`;
+                            if (!seenSlots.has(sk)) {
+                                seenSlots.add(sk);
+                                targetList.push(item);
+                            }
+                        }
+                    };
+                    mergeList(existing.theorySlots, c.theorySlots || []);
+                    mergeList(existing.labSlots, c.labSlots || []);
+                    mergeList(existing.offerings, c.offerings || []);
+                    for (const s of c.slots || []) {
+                        if (!existing.slots.includes(s)) existing.slots.push(s);
+                    }
+                }
+            }
+        }
+
+        // Save to results.json for local preview / review tools
+        try {
+            const resultsJsonPath = path.join(COURSE_OCR_OUT_DIR, 'results.json');
+            fs.writeFileSync(resultsJsonPath, JSON.stringify(uniqueCourses, null, 2), 'utf8');
+        } catch (_) {}
+        try {
+            const backendOutPath = path.join(__dirname, 'results.json');
+            fs.writeFileSync(backendOutPath, JSON.stringify(uniqueCourses, null, 2), 'utf8');
+        } catch (_) {}
 
         return res.json({
             success: true,
-            totalFiles: rawResults.length,
-            courses,
-            // Keep output paths in the response for debugging / review.html link
+            totalFiles: files.length,
+            courses: uniqueCourses,
             outputDir: COURSE_OCR_OUT_DIR,
         });
 
@@ -237,23 +359,16 @@ app.post('/api/pdf-ocr', uploadLimiter, (req, res, next) => {
         console.error('PDF OCR error:', err);
         return res.status(500).json({ success: false, error: err.message });
     } finally {
-        // Clean up individual uploaded temp files
         for (const file of files) {
             if (file.path && fs.existsSync(file.path)) {
                 fs.unlink(file.path, () => {});
             }
-        }
-        // Clean up temp batch folder
-        if (tempFolderCreated && fs.existsSync(tempFolderCreated)) {
-            fs.rm(tempFolderCreated, { recursive: true, force: true }, () => {});
         }
     }
 });
 
 /**
  * GET /api/pdf-ocr/results
- * Return the most recently produced results.json without re-running OCR.
- * Useful when the user has already run the pipeline and wants to reload.
  */
 app.get('/api/pdf-ocr/results', apiLimiter, (_req, res) => {
     const resultsPath = path.join(COURSE_OCR_OUT_DIR, 'results.json');

@@ -11,13 +11,12 @@ const { parseOCRText } = require('../backend/services/parser');
  * Preserves the natural reading order (offset) from page 1 to the end of the document.
  */
 function extractSmartSlices(buffer) {
-    const jpegs = [];
+    const all = [];
     let start = 0;
     while ((start = buffer.indexOf(Buffer.from([0xFF, 0xD8, 0xFF]), start)) !== -1) {
         const end = buffer.indexOf(Buffer.from([0xFF, 0xD9]), start + 2);
         if (end !== -1) {
             const data = buffer.subarray(start, end + 2);
-            // Parse dimensions from JPEG SOF markers
             let w = 0, h = 0;
             for (let k = 0; k < data.length - 8; k++) {
                 if (data[k] === 0xFF && (data[k + 1] === 0xC0 || data[k + 1] === 0xC2)) {
@@ -26,34 +25,80 @@ function extractSmartSlices(buffer) {
                     break;
                 }
             }
-            jpegs.push({ offset: start, size: data.length, data, w, h });
+            if (data.length > 40000 && w >= 1200 && h >= 600) {
+                const aspect = w / h;
+                if (aspect >= 0.7 && aspect <= 2.5) {
+                    all.push({ offset: start, size: data.length, w, h, data });
+                }
+            }
             start = end + 2;
         } else {
             break;
         }
     }
 
-    // 1. Substantive images (> 25KB, width >= 300, height >= 150)
-    const substantive = jpegs.filter(j => j.size > 25000 && j.w >= 300 && j.h >= 150);
-
-    // 2. Filter extreme aspect ratios (divider lines, thin header strips: aspect > 4.5 or < 0.25)
-    const reasonable = substantive.filter(j => {
-        const aspect = j.w / j.h;
-        return aspect >= 0.25 && aspect <= 4.5;
-    });
-
-    // 3. Deduplicate consecutive duplicate dimensions (identical graphics / color planes)
-    const deduplicated = [];
-    for (const s of reasonable) {
-        const last = deduplicated[deduplicated.length - 1];
-        if (!last || last.w !== s.w || last.h !== s.h) {
-            deduplicated.push(s.data);
+    if (all.length === 0) {
+        // Fallback for smaller/cropped PDFs
+        let s2 = 0;
+        while ((s2 = buffer.indexOf(Buffer.from([0xFF, 0xD8, 0xFF]), s2)) !== -1) {
+            const e2 = buffer.indexOf(Buffer.from([0xFF, 0xD9]), s2 + 2);
+            if (e2 !== -1) {
+                const d2 = buffer.subarray(s2, e2 + 2);
+                if (d2.length > 25000) all.push({ offset: s2, size: d2.length, w: 0, h: 0, data: d2 });
+                s2 = e2 + 2;
+            } else break;
         }
     }
 
-    if (deduplicated.length > 0) return deduplicated.slice(0, 6);
-    // Fallback if metadata extraction was inconclusive
-    return jpegs.sort((a, b) => b.size - a.size).slice(0, 4).map(c => c.data);
+    // Determine dominant resolution (e.g. 2361x1637)
+    const dimCounts = {};
+    for (const item of all) {
+        if (item.w && item.h) {
+            const k = item.w + 'x' + item.h;
+            dimCounts[k] = (dimCounts[k] || 0) + 1;
+        }
+    }
+    const dominantDim = Object.keys(dimCounts).sort((a,b) => dimCounts[b] - dimCounts[a])[0];
+
+    // Pick exactly one primary image per page offset (spaced by >= 350KB in the PDF stream)
+    const pages = [];
+    for (const item of all) {
+        const isDominant = (item.w + 'x' + item.h) === dominantDim;
+        if (isDominant || all.length <= 4) {
+            const isClose = pages.some(p => Math.abs(p.offset - item.offset) < 350000);
+            if (!isClose) {
+                pages.push(item);
+            }
+        }
+    }
+
+    if (pages.length > 0) return pages.map(p => p.data);
+    return all.slice(0, 5).map(p => p.data);
+}
+
+function inferCourseFromFilename(filename) {
+    if (!filename) return null;
+    const base = filename.replace(/\.[^/.]+$/, '').trim();
+    const codeMatch = base.match(/\b([A-Z]{2,4}\d{4}[A-Z]?)\b/i);
+    if (codeMatch) {
+        return { code: codeMatch[1].toUpperCase(), name: codeMatch[1].toUpperCase() };
+    }
+    const lower = base.toLowerCase();
+    if (/adv.*german|german/i.test(lower)) return { code: 'FRL2005', name: 'German for Advanced Learners' };
+    if (/french/i.test(lower)) return { code: 'FRE2001', name: 'French' };
+    if (/sgc|secure.*group/i.test(lower)) return { code: 'CSE3013', name: 'Secure Group Communications' };
+    if (/\bdw\b|data.*warehous/i.test(lower)) return { code: 'CSE4005', name: 'Data Warehousing and Data Mining' };
+    if (/sts|competitive.*coding/i.test(lower)) return { code: 'STS4006', name: 'Advanced Competitive Coding - II' };
+    if (/agile/i.test(lower)) return { code: 'CSE3001', name: 'Agile Development Process' };
+    if (/\bst\b|testing/i.test(lower)) return { code: 'SWE4002', name: 'Software Testing' };
+    if (/iwt|internet.*web/i.test(lower)) return { code: 'SWE3002', name: 'Internet and Web Technology' };
+    if (/fda|data.*analytic/i.test(lower)) return { code: 'CSE3002', name: 'Foundations of Data Analytics' };
+    if (/\bml\b|machine.*learn/i.test(lower)) return { code: 'CSE3008', name: 'Introduction to Machine Learning' };
+    if (/\bdl\b|deep.*learn/i.test(lower)) return { code: 'CSE4022', name: 'Deep Learning' };
+    if (/cloud/i.test(lower)) return { code: 'CSE3006', name: 'Cloud Computing' };
+
+    const cleanTitle = base.replace(/[_\-]+/g, ' ').trim();
+    return { code: base.toUpperCase().slice(0, 8), name: cleanTitle };
 }
 
 async function handler(req, res) {
@@ -83,7 +128,7 @@ async function handler(req, res) {
 
         let allCourses = [];
 
-        for (const f of files.slice(0, 3)) {
+        for (const f of files.slice(0, 50)) {
             const nameLower = (f.originalname || '').toLowerCase();
             const isPdf = f.mimetype === 'application/pdf' || nameLower.endsWith('.pdf');
             const isImg = (f.mimetype && f.mimetype.startsWith('image/')) || /\.(png|jpe?g|webp)$/i.test(nameLower);
@@ -120,9 +165,18 @@ async function handler(req, res) {
                 }
 
                 if (rawText && rawText.trim().length > 20) {
-                    const parsed = parseOCRText(rawText);
+                    const fnInfo = inferCourseFromFilename(f.originalname || '');
+                    const fallbackCode = fnInfo ? fnInfo.code : '';
+                    const fallbackName = fnInfo ? fnInfo.name : '';
+                    const parsed = parseOCRText(rawText, fallbackCode, fallbackName);
                     if (parsed.courses && parsed.courses.length > 0) {
-                        allCourses.push(...parsed.courses);
+                        for (const c of parsed.courses) {
+                            if (!c.code && fallbackCode) {
+                                c.code = fallbackCode;
+                                c.name = fallbackName;
+                            }
+                            allCourses.push(c);
+                        }
                     }
                 }
             } else if (isImg) {
@@ -130,7 +184,10 @@ async function handler(req, res) {
                     const ocr = await extractTextFromImage(f.buffer);
                     const txt = typeof ocr === 'string' ? ocr : (ocr.text || '');
                     if (txt && txt.trim().length > 20) {
-                        const parsed = parseOCRText(txt);
+                        const fnInfo = inferCourseFromFilename(f.originalname || '');
+                        const fallbackCode = fnInfo ? fnInfo.code : '';
+                        const fallbackName = fnInfo ? fnInfo.name : '';
+                        const parsed = parseOCRText(txt, fallbackCode, fallbackName);
                         if (parsed.courses && parsed.courses.length > 0) {
                             allCourses.push(...parsed.courses);
                         }
@@ -177,6 +234,7 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
+module.exports.extractSmartSlices = extractSmartSlices;
 module.exports.config = {
     api: {
         bodyParser: false,

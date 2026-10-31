@@ -1404,10 +1404,15 @@ function clearOcrStatus() {
 // Helper to merge multiple course lists, preserving all unique slots, faculties & venues
 function mergeCourseLists(existingCourses, incomingCourses) {
   const map = new Map();
-  const getCourseKey = (c) =>
-    (c.code && c.code !== "N/A" ? c.code : c.name || "")
-      .trim()
-      .toUpperCase();
+  const getCourseKey = (c) => {
+    if (c.code && c.code !== "N/A" && c.code !== "CUSTOM") {
+      return c.code.trim().toUpperCase();
+    }
+    if (c.name && !c.name.startsWith("Course (") && c.name !== "Registered Course") {
+      return c.name.trim().toUpperCase();
+    }
+    return "IMPORTED_COURSE";
+  };
 
   function addCourse(c) {
     const key = getCourseKey(c);
@@ -1430,11 +1435,15 @@ function mergeCourseLists(existingCourses, incomingCourses) {
 
     const target = map.get(key);
     if (
-      (!target.name || target.name.startsWith("Course (")) &&
+      (!target.name || target.name.startsWith("Course (") || target.name === "Registered Course") &&
       c.name &&
-      !c.name.startsWith("Course (")
+      !c.name.startsWith("Course (") &&
+      c.name !== "Registered Course"
     ) {
       target.name = c.name;
+    }
+    if (!target.code && c.code && c.code !== "N/A") {
+      target.code = c.code;
     }
     if (c.credit && (!target.credit || target.credit === 3)) {
       target.credit = c.credit;

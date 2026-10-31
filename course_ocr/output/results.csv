@@ -1,10 +1,2 @@
 source_file,course_code,course_name,component_type,credit,slot_type,slot,venue,faculty,row_flags,course_confidence,needs_ocr,error
-AGILE_PROGRAM.pdf,CSE3001,Agile Development Process,Embedded Theory and Project,4.0,theory,F1+TFF1,AB2-102,Anurag De,,ok,True,
-AGILE_PROGRAM.pdf,CSE3001,Agile Development Process,Embedded Theory and Project,4.0,theory,F1+TF1,CB-512,Khasim Syed,,ok,True,
-AGILE_PROGRAM.pdf,CSE3001,Agile Development Process,Embedded Theory and Project,4.0,theory,D2+TD2,CB-324,Anurag De,,ok,True,
-AGILE_PROGRAM.pdf,CSE3001,Agile Development Process,Embedded Theory and Project,4.0,theory,D2+TDD2,AB2-G14,Khasim Syed,,ok,True,
-CLOUD_PROE.pdf,SWE4004,Cloud Computing and its Applications,Embedded Theory and Project,4.0,theory,D2+TD2,CB-507,JAWAHAR MUTHUSAMY,,ok,True,
-CLOUD_PROE.pdf,SWE4004,Cloud Computing and its Applications,Embedded Theory and Project,4.0,theory,D2+TDD2,CB-512,Shaik Kareemulla,,ok,True,
-CLOUD_PROE.pdf,SWE4004,Cloud Computing and its Applications,Embedded Theory and Project,4.0,theory,D2+TD2,CB-510,Nagendra Panini Challa,,ok,True,
-CLOUD_PROE.pdf,SWE4004,Cloud Computing and its Applications,Embedded Theory and Project,4.0,theory,D1+TDD1,CB-219,Shaik Kareemulla,,ok,True,
-CLOUD_PROE.pdf,SWE4004,Cloud Computing and its Applications,Embedded Theory and Project,4.0,theory,D1+TD1,CB-220,Nagendra Panini Challa,,ok,True,
+Adv_German.pdf,,,,,,,,,,excluded,True,

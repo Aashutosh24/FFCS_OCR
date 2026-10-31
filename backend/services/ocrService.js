@@ -162,77 +162,39 @@ async function extractTextFromImage(inputBuffer) {
       preserve_interword_spaces: "1",
     });
 
-    // Pass 1: Fast buffer recognition (downscale to max 2000px if massive to prevent slow OCR)
+    // Pass 1: Optimized grayscale recognition with native high-res preservation (no blur)
     let pass1Buffer = inputBuffer;
     if (sharp) {
       try {
         const meta = await sharp(inputBuffer).metadata();
-        if (meta && meta.width && meta.width > 2000) {
-          pass1Buffer = await sharp(inputBuffer).resize({ width: 2000 }).toBuffer();
+        if (meta && meta.width) {
+          if (meta.width > 3200) {
+            pass1Buffer = await sharp(inputBuffer).resize({ width: 2400 }).grayscale().toBuffer();
+          } else if (meta.width < 1400) {
+            pass1Buffer = await sharp(inputBuffer).resize({ width: Math.min(meta.width * 2, 2048) }).grayscale().toBuffer();
+          } else {
+            pass1Buffer = await sharp(inputBuffer).grayscale().toBuffer();
+          }
         }
       } catch (_) {}
     }
 
     let { data: { text, confidence } } = await worker.recognize(pass1Buffer);
 
-    // If text already has strong course signals, return immediately
-    if (text && textHasCourseSignals(text) && text.trim().length > 30) {
+    // If text already has strong course signals or reasonable readable length, return immediately
+    if (text && (textHasCourseSignals(text) || text.trim().length > 50)) {
       return { text: text || "", confidence: confidence || 0 };
     }
 
-    // If image already yielded clear readable text (>80 chars) but no course signals,
-    // it is a decorative header, logo, or student timetable calendar.
-    // Avoid running 4 more heavy passes that would waste 30-50s and trigger Vercel 504 timeouts.
-    if (text && text.trim().length > 80) {
-      return { text: text || "", confidence: confidence || 0 };
-    }
-
-    // Pass 2: Standard enhanced grayscale
-    const grayBuffer = (await preprocessGrayscale(inputBuffer)) || inputBuffer;
-    const resGray = await worker.recognize(grayBuffer);
-    if (resGray.data.text && textHasCourseSignals(resGray.data.text)) {
-      return { text: resGray.data.text, confidence: resGray.data.confidence };
-    }
-
-    // Pass 2: Red channel separation
-    try {
-      const redBuffer = await preprocessRedChannel(inputBuffer);
-      if (redBuffer) {
-        const resRed = await worker.recognize(redBuffer);
-        if (resRed.data.text && textHasCourseSignals(resRed.data.text)) {
-          return { text: resRed.data.text, confidence: resRed.data.confidence };
-        }
-        if (resRed.data.text && resRed.data.text.trim().length > (text ? text.trim().length : 0)) {
-          text = resRed.data.text;
-          confidence = resRed.data.confidence;
-        }
-      }
-    } catch (_) {}
-
-    // Pass 3: Blue channel separation
-    try {
-      const blueBuffer = await preprocessBlueChannel(inputBuffer);
-      if (blueBuffer) {
-        const resBlue = await worker.recognize(blueBuffer);
-        if (resBlue.data.text && textHasCourseSignals(resBlue.data.text)) {
-          return { text: resBlue.data.text, confidence: resBlue.data.confidence };
-        }
-        if (resBlue.data.text && resBlue.data.text.trim().length > (text ? text.trim().length : 0)) {
-          text = resBlue.data.text;
-          confidence = resBlue.data.confidence;
-        }
-      }
-    } catch (_) {}
-
-    // Pass 4: Threshold fallback for low-contrast/faint text
+    // Pass 2: Fallback contrast enhancement only if initial pass was sparse (< 20 chars)
     if (!text || text.trim().length < 20) {
       try {
-        const thresholdBuffer = await preprocessThreshold(inputBuffer);
-        if (thresholdBuffer) {
-          const resThresh = await worker.recognize(thresholdBuffer);
-          if (resThresh.data.text && resThresh.data.text.trim().length > (text ? text.trim().length : 0)) {
-            text = resThresh.data.text;
-            confidence = resThresh.data.confidence;
+        const enhancedBuffer = (await preprocessGrayscale(pass1Buffer)) || (await preprocessThreshold(pass1Buffer));
+        if (enhancedBuffer) {
+          const resFallback = await worker.recognize(enhancedBuffer);
+          if (resFallback.data.text && resFallback.data.text.trim().length > (text ? text.trim().length : 0)) {
+            text = resFallback.data.text;
+            confidence = resFallback.data.confidence;
           }
         }
       } catch (_) {}
@@ -242,7 +204,7 @@ async function extractTextFromImage(inputBuffer) {
   };
 
   const timeoutJob = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("OCR timeout (20s limit reached)")), 20000)
+    setTimeout(() => reject(new Error("OCR timeout (25s limit reached)")), 25000)
   );
 
   try {

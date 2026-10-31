@@ -1,665 +1,665 @@
 
-        console.log('VIT FFCS Timetable Planner initializing...');
+console.log('VIT FFCS Timetable Planner initializing...');
 
-        // ✅ EXACT VIT THEORY SLOT MAPPINGS
-        const creditSlots = {
-            4: [
-                'A1+TA1+TAA1', 'B1+TB1+TBB1', 'C1+TC1+TCC1', 'C1+SC1+TC1', 'D1+TD1+TDD1', 'D1+TD1+SD1',
-                'A2+TA2+TAA2', 'B2+TB2+TBB2', 'C2+TC2+TCC2', 'C2+SC2+TC2', 'D2+TD2+TDD2', 'D2+SD2+TD2',
-                'E1+TE1+TEE1', 'E1+SE1+TE1', 'F1+TF1+TFF1', 'F1+TF1+TBB2', 'G1+TG1+TGG1',
-                'E2+TE2+TEE2', 'E2+SE2+TE2', 'F2+TF2+TFF2', 'F2+TF2+TBB1'
-            ],
-            3: [
-                'A1+TA1', 'B1+TB1', 'C1+TC1', 'C1+TCC1', 'D1+TD1', 'D1+TDD1',
-                'A2+TA2', 'B2+TB2', 'C2+TC2', 'C2+TCC2', 'D2+TD2', 'D2+TDD2',
-                'E1+TE1', 'E1+TEE1', 'F1+TF1', 'F1+TFF1', 'G1+TG1', 'G1+TGG1',
-                'E2+TE2', 'E2+TEE2', 'F2+TF2', 'F2+TFF2', 'G2+TG2', 'G2+TGG2'
-            ],
-            2: [
-                'A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G1', 'G2'
-            ],
-            1: [
-                'TA1', 'TB1', 'TC1', 'TD1', 'TE1', 'TF1', 'TA2', 'TB2', 'TC2', 'TD2', 'TE2', 'TF2',
-                'TG1', 'TEE1', 'TCC1', 'TDD1', 'TAA1', 'TBB1', 'TG2', 'TAA2', 'TBB2', 'TDD2', 'TCC2', 'TEE2'
-            ]
+// ✅ EXACT VIT THEORY SLOT MAPPINGS
+const creditSlots = {
+    4: [
+        'A1+TA1+TAA1', 'B1+TB1+TBB1', 'C1+TC1+TCC1', 'C1+SC1+TC1', 'D1+TD1+TDD1', 'D1+TD1+SD1',
+        'A2+TA2+TAA2', 'B2+TB2+TBB2', 'C2+TC2+TCC2', 'C2+SC2+TC2', 'D2+TD2+TDD2', 'D2+SD2+TD2',
+        'E1+TE1+TEE1', 'E1+SE1+TE1', 'F1+TF1+TFF1', 'F1+TF1+TBB2', 'G1+TG1+TGG1',
+        'E2+TE2+TEE2', 'E2+SE2+TE2', 'F2+TF2+TFF2', 'F2+TF2+TBB1'
+    ],
+    3: [
+        'A1+TA1', 'B1+TB1', 'C1+TC1', 'C1+TCC1', 'D1+TD1', 'D1+TDD1',
+        'A2+TA2', 'B2+TB2', 'C2+TC2', 'C2+TCC2', 'D2+TD2', 'D2+TDD2',
+        'E1+TE1', 'E1+TEE1', 'F1+TF1', 'F1+TFF1', 'G1+TG1', 'G1+TGG1',
+        'E2+TE2', 'E2+TEE2', 'F2+TF2', 'F2+TFF2', 'G2+TG2', 'G2+TGG2'
+    ],
+    2: [
+        'A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G1', 'G2'
+    ],
+    1: [
+        'TA1', 'TB1', 'TC1', 'TD1', 'TE1', 'TF1', 'TA2', 'TB2', 'TC2', 'TD2', 'TE2', 'TF2',
+        'TG1', 'TEE1', 'TCC1', 'TDD1', 'TAA1', 'TBB1', 'TG2', 'TAA2', 'TBB2', 'TDD2', 'TCC2', 'TEE2'
+    ]
+};
+
+// ✅ LAB SLOT SUGGESTIONS
+const labSlotSuggestions = [
+    'L1+L2', 'L3+L4', 'L5+L6', 'L7+L8', 'L9+L10', 'L11+L12', 'L13+L14', 'L15+L16', 'L17+L18',
+    'L19+L20', 'L21+L22', 'L23+L24', 'L25+L26', 'L27+L28', 'L29+L30',
+    'L31+L32', 'L33+L34', 'L35+L36', 'L37+L38', 'L39+L40', 'L41+L42', 'L43+L44', 'L45+L46', 'L47+L48',
+    'L49+L50', 'L51+L52', 'L53+L54', 'L55+L56', 'L57+L58', 'L59+L60'
+];
+
+// ✅ TIME SLOTS MAPPING (for display purposes)
+const theoryTimeSlots = [
+    '8:00-8:50', '9:00-9:50', '10:00-10:50', '11:00-11:50', '12:00-12:50', '—',
+    '2:00-2:50', '3:00-3:50', '4:00-4:50', '5:00-5:50', '6:00-6:50', '—'
+];
+const timeSlots = [
+    '8:00-8:50', '9:00-9:50', '10:00-10:50', '11:00-11:50', '12:00-12:50',
+    'LUNCH', '2:00-2:50', '3:00-3:50', '4:00-4:50', '5:00-5:50', '6:00-6:50', '6:50-7:30'
+];
+const labTimeSlots = [
+    '8:00-8:50', '8:50-9:40', '9:50-10:40', '10:40-11:30', '11:40-12:30', '12:30-1:10',
+    '2:00-2:50', '2:50-3:40', '3:50-4:40', '4:40-5:30', '6:00-6:50', '6:50-7:30'
+];
+
+// ✅ CORRECT SLOT MAPPINGS - MAIN SLOTS GET 2 CLASSES, T-SLOTS GET 1 CLASS
+const slotMappings = {
+    // ====== MAIN THEORY SLOTS (2 classes each for proper credit distribution) ======
+
+    // A1 slots (2 classes per week)
+    'A1': [
+        { day: 'TUE', period: 1, type: 'theory' },
+        { day: 'SAT', period: 4, type: 'theory' }
+    ],
+
+    // A2 slots (2 classes per week)
+    'A2': [
+        { day: 'TUE', period: 7, type: 'theory' },
+        { day: 'THU', period: 8, type: 'theory' }
+    ],
+
+    // B1 slots (2 classes per week)
+    'B1': [
+        { day: 'TUE', period: 2, type: 'theory' },
+        { day: 'WED', period: 4, type: 'theory' }
+    ],
+
+    // B2 slots (2 classes per week)
+    'B2': [
+        { day: 'TUE', period: 8, type: 'theory' },
+        { day: 'WED', period: 9, type: 'theory' }
+    ],
+
+    // C1 slots (2 classes per week)
+    'C1': [
+        { day: 'THU', period: 1, type: 'theory' },
+        { day: 'SAT', period: 2, type: 'theory' }
+    ],
+
+    // C2 slots (2 classes per week)
+    'C2': [
+        { day: 'THU', period: 7, type: 'theory' },
+        { day: 'FRI', period: 6, type: 'theory' }
+    ],
+
+    // D1 slots (2 classes per week)
+    'D1': [
+        { day: 'TUE', period: 4, type: 'theory' },
+        { day: 'WED', period: 1, type: 'theory' }
+    ],
+
+    // D2 slots (2 classes per week)
+    'D2': [
+        { day: 'WED', period: 6, type: 'theory' },
+        { day: 'SAT', period: 6, type: 'theory' }
+    ],
+
+    // E1 slots (2 classes per week)
+    'E1': [
+        { day: 'WED', period: 3, type: 'theory' },
+        { day: 'SAT', period: 1, type: 'theory' }
+    ],
+
+    // E2 slots (2 classes per week)
+    'E2': [
+        { day: 'WED', period: 8, type: 'theory' },
+        { day: 'SAT', period: 7, type: 'theory' }
+    ],
+
+    // F1 slots (2 classes per week)
+    'F1': [
+        { day: 'WED', period: 2, type: 'theory' },
+        { day: 'FRI', period: 3, type: 'theory' }
+    ],
+
+    // F2 slots (2 classes per week)
+    'F2': [
+        { day: 'TUE', period: 6, type: 'theory' },
+        { day: 'FRI', period: 9, type: 'theory' }
+    ],
+
+    // G1 slots (2 classes per week)
+    'G1': [
+        { day: 'TUE', period: 3, type: 'theory' },
+        { day: 'SAT', period: 3, type: 'theory' }
+    ],
+
+    // G2 slots (2 classes per week)
+    'G2': [
+        { day: 'TUE', period: 9, type: 'theory' },
+        { day: 'WED', period: 7, type: 'theory' }
+    ],
+
+    // ====== T-THEORY SLOTS (1 class each) ======
+
+    'TA1': [{ day: 'FRI', period: 2, type: 'theory' }],
+    'TA2': [{ day: 'FRI', period: 8, type: 'theory' }],
+    'TB1': [{ day: 'FRI', period: 1, type: 'theory' }],
+    'TB2': [{ day: 'FRI', period: 7, type: 'theory' }],
+    'TC1': [{ day: 'TUE', period: 3, type: 'theory' }],
+    'TC2': [{ day: 'TUE', period: 9, type: 'theory' }],
+    'TD1': [{ day: 'THU', period: 2, type: 'theory' }],
+    'TD2': [{ day: 'THU', period: 9, type: 'theory' }],
+    'TE1': [{ day: 'FRI', period: 4, type: 'theory' }],
+    'TE2': [{ day: 'THU', period: 6, type: 'theory' }],
+    'TF1': [{ day: 'SAT', period: 3, type: 'theory' }],
+    'TF2': [{ day: 'WED', period: 7, type: 'theory' }],
+    'TG1': [{ day: 'THU', period: 2, type: 'theory' }],
+    'TG2': [{ day: 'THU', period: 9, type: 'theory' }],
+
+    // ====== TAA/TBB/TCC/TDD/TEE/TFF/TGG SLOTS (1 class each) ======
+
+    'TAA1': [{ day: 'THU', period: 3, type: 'theory' }],
+    'TAA2': [{ day: 'SAT', period: 8, type: 'theory' }],
+    'TBB1': [{ day: 'THU', period: 4, type: 'theory' }],
+    'TBB2': [{ day: 'SAT', period: 9, type: 'theory' }],
+    'TCC1': [{ day: 'FRI', period: 0, type: 'theory' }],
+    'TCC2': [{ day: 'WED', period: 10, type: 'theory' }],
+    'TDD1': [{ day: 'SAT', period: 0, type: 'theory' }],
+    'TDD2': [{ day: 'TUE', period: 10, type: 'theory' }],
+    'TEE1': [{ day: 'THU', period: 0, type: 'theory' }],
+    'TEE2': [{ day: 'FRI', period: 10, type: 'theory' }],
+    'TFF1': [{ day: 'TUE', period: 0, type: 'theory' }],
+    'TFF2': [{ day: 'SAT', period: 10, type: 'theory' }],
+    'TGG1': [{ day: 'WED', period: 0, type: 'theory' }],
+    'TGG2': [{ day: 'THU', period: 10, type: 'theory' }],
+
+    // ====== SPECIAL SLOTS (1 class each) ======
+
+    'SC1': [{ day: 'WED', period: 8, type: 'theory' }],
+    'SC2': [{ day: 'WED', period: 3, type: 'theory' }],
+    'SD1': [{ day: 'SAT', period: 7, type: 'theory' }],
+    'SD2': [{ day: 'FRI', period: 4, type: 'theory' }],
+    'SE1': [{ day: 'THU', period: 6, type: 'theory' }],
+    'SE2': [{ day: 'SAT', period: 1, type: 'theory' }],
+
+    // ====== LAB SLOTS ======
+
+    // TUESDAY Labs
+    'L1': [{ day: 'TUE', period: 0, type: 'lab' }],
+    'L2': [{ day: 'TUE', period: 1, type: 'lab' }],
+    'L3': [{ day: 'TUE', period: 2, type: 'lab' }],
+    'L4': [{ day: 'TUE', period: 3, type: 'lab' }],
+    'L5': [{ day: 'TUE', period: 4, type: 'lab' }],
+    'L31': [{ day: 'TUE', period: 6, type: 'lab' }],
+    'L32': [{ day: 'TUE', period: 7, type: 'lab' }],
+    'L33': [{ day: 'TUE', period: 8, type: 'lab' }],
+    'L34': [{ day: 'TUE', period: 9, type: 'lab' }],
+    'L35': [{ day: 'TUE', period: 10, type: 'lab' }],
+
+    // WEDNESDAY Labs
+    'L7': [{ day: 'WED', period: 0, type: 'lab' }],
+    'L8': [{ day: 'WED', period: 1, type: 'lab' }],
+    'L9': [{ day: 'WED', period: 2, type: 'lab' }],
+    'L10': [{ day: 'WED', period: 3, type: 'lab' }],
+    'L11': [{ day: 'WED', period: 4, type: 'lab' }],
+    'L37': [{ day: 'WED', period: 6, type: 'lab' }],
+    'L38': [{ day: 'WED', period: 7, type: 'lab' }],
+    'L39': [{ day: 'WED', period: 8, type: 'lab' }],
+    'L40': [{ day: 'WED', period: 9, type: 'lab' }],
+    'L41': [{ day: 'WED', period: 10, type: 'lab' }],
+
+    // THURSDAY Labs
+    'L13': [{ day: 'THU', period: 0, type: 'lab' }],
+    'L14': [{ day: 'THU', period: 1, type: 'lab' }],
+    'L15': [{ day: 'THU', period: 2, type: 'lab' }],
+    'L16': [{ day: 'THU', period: 3, type: 'lab' }],
+    'L17': [{ day: 'THU', period: 4, type: 'lab' }],
+    'L43': [{ day: 'THU', period: 6, type: 'lab' }],
+    'L44': [{ day: 'THU', period: 7, type: 'lab' }],
+    'L45': [{ day: 'THU', period: 8, type: 'lab' }],
+    'L46': [{ day: 'THU', period: 9, type: 'lab' }],
+    'L47': [{ day: 'THU', period: 10, type: 'lab' }],
+
+    // FRIDAY Labs
+    'L19': [{ day: 'FRI', period: 0, type: 'lab' }],
+    'L20': [{ day: 'FRI', period: 1, type: 'lab' }],
+    'L21': [{ day: 'FRI', period: 2, type: 'lab' }],
+    'L22': [{ day: 'FRI', period: 3, type: 'lab' }],
+    'L23': [{ day: 'FRI', period: 4, type: 'lab' }],
+    'L49': [{ day: 'FRI', period: 6, type: 'lab' }],
+    'L50': [{ day: 'FRI', period: 7, type: 'lab' }],
+    'L51': [{ day: 'FRI', period: 8, type: 'lab' }],
+    'L52': [{ day: 'FRI', period: 9, type: 'lab' }],
+    'L53': [{ day: 'FRI', period: 10, type: 'lab' }],
+
+    // SATURDAY Labs
+    'L25': [{ day: 'SAT', period: 0, type: 'lab' }],
+    'L26': [{ day: 'SAT', period: 1, type: 'lab' }],
+    'L27': [{ day: 'SAT', period: 2, type: 'lab' }],
+    'L28': [{ day: 'SAT', period: 3, type: 'lab' }],
+    'L29': [{ day: 'SAT', period: 4, type: 'lab' }],
+    'L55': [{ day: 'SAT', period: 6, type: 'lab' }],
+    'L56': [{ day: 'SAT', period: 7, type: 'lab' }],
+    'L57': [{ day: 'SAT', period: 8, type: 'lab' }],
+    'L58': [{ day: 'SAT', period: 9, type: 'lab' }],
+    'L59': [{ day: 'SAT', period: 10, type: 'lab' }]
+};
+
+let selectedCourses = [];
+let timetableData = {};
+let currentCreditType = 4;
+let selectedSlot = null;
+let currentLabSlot = null;
+
+// ✅ Initialize properly when DOM loads
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('✅ DOM Content Loaded - Initializing...');
+    initializeTimetableData();
+    populateSlots(4);
+    updateStats();
+    updateSelectedCoursesList();
+    setupDropzone();
+    console.log('✅ Initialization Complete!');
+});
+
+function initializeTimetableData() {
+    const days = ['TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    days.forEach(day => {
+        timetableData[day] = {
+            theory: Array(12).fill(null),
+            lab: Array(12).fill(null)
         };
+    });
+    console.log('✅ Timetable data initialized');
+}
 
-        // ✅ LAB SLOT SUGGESTIONS
-        const labSlotSuggestions = [
-            'L1+L2', 'L3+L4', 'L5+L6', 'L7+L8', 'L9+L10', 'L11+L12', 'L13+L14', 'L15+L16', 'L17+L18',
-            'L19+L20', 'L21+L22', 'L23+L24', 'L25+L26', 'L27+L28', 'L29+L30',
-            'L31+L32', 'L33+L34', 'L35+L36', 'L37+L38', 'L39+L40', 'L41+L42', 'L43+L44', 'L45+L46', 'L47+L48',
-            'L49+L50', 'L51+L52', 'L53+L54', 'L55+L56', 'L57+L58', 'L59+L60'
-        ];
+function switchCreditTab(credits) {
+    console.log('Switching to credit tab:', credits);
+    currentCreditType = credits;
 
-        // ✅ TIME SLOTS MAPPING (for display purposes)
-        const theoryTimeSlots = [
-            '8:00-8:50', '9:00-9:50', '10:00-10:50', '11:00-11:50', '12:00-12:50', '—',
-            '2:00-2:50', '3:00-3:50', '4:00-4:50', '5:00-5:50', '6:00-6:50', '—'
-        ];
-        const timeSlots = [
-            '8:00-8:50', '9:00-9:50', '10:00-10:50', '11:00-11:50', '12:00-12:50',
-            'LUNCH', '2:00-2:50', '3:00-3:50', '4:00-4:50', '5:00-5:50', '6:00-6:50', '6:50-7:30'
-        ];
-        const labTimeSlots = [
-            '8:00-8:50', '8:50-9:40', '9:50-10:40', '10:40-11:30', '11:40-12:30', '12:30-1:10',
-            '2:00-2:50', '2:50-3:40', '3:50-4:40', '4:40-5:30', '6:00-6:50', '6:50-7:30'
-        ];
+    document.querySelectorAll('.credit-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
 
-        // ✅ CORRECT SLOT MAPPINGS - MAIN SLOTS GET 2 CLASSES, T-SLOTS GET 1 CLASS
-        const slotMappings = {
-            // ====== MAIN THEORY SLOTS (2 classes each for proper credit distribution) ======
+    populateSlots(credits);
+    selectedSlot = null;
+}
 
-            // A1 slots (2 classes per week)
-            'A1': [
-                { day: 'TUE', period: 1, type: 'theory' },
-                { day: 'SAT', period: 4, type: 'theory' }
-            ],
+function populateSlots(credits) {
+    console.log('Populating slots for credits:', credits);
+    const container = document.getElementById('theorySlots');
+    container.innerHTML = '';
 
-            // A2 slots (2 classes per week)
-            'A2': [
-                { day: 'TUE', period: 7, type: 'theory' },
-                { day: 'THU', period: 8, type: 'theory' }
-            ],
-
-            // B1 slots (2 classes per week)
-            'B1': [
-                { day: 'TUE', period: 2, type: 'theory' },
-                { day: 'WED', period: 4, type: 'theory' }
-            ],
-
-            // B2 slots (2 classes per week)
-            'B2': [
-                { day: 'TUE', period: 8, type: 'theory' },
-                { day: 'WED', period: 9, type: 'theory' }
-            ],
-
-            // C1 slots (2 classes per week)
-            'C1': [
-                { day: 'THU', period: 1, type: 'theory' },
-                { day: 'SAT', period: 2, type: 'theory' }
-            ],
-
-            // C2 slots (2 classes per week)
-            'C2': [
-                { day: 'THU', period: 7, type: 'theory' },
-                { day: 'FRI', period: 6, type: 'theory' }
-            ],
-
-            // D1 slots (2 classes per week)
-            'D1': [
-                { day: 'TUE', period: 4, type: 'theory' },
-                { day: 'WED', period: 1, type: 'theory' }
-            ],
-
-            // D2 slots (2 classes per week)
-            'D2': [
-                { day: 'WED', period: 6, type: 'theory' },
-                { day: 'SAT', period: 6, type: 'theory' }
-            ],
-
-            // E1 slots (2 classes per week)
-            'E1': [
-                { day: 'WED', period: 3, type: 'theory' },
-                { day: 'SAT', period: 1, type: 'theory' }
-            ],
-
-            // E2 slots (2 classes per week)
-            'E2': [
-                { day: 'WED', period: 8, type: 'theory' },
-                { day: 'SAT', period: 7, type: 'theory' }
-            ],
-
-            // F1 slots (2 classes per week)
-            'F1': [
-                { day: 'WED', period: 2, type: 'theory' },
-                { day: 'FRI', period: 3, type: 'theory' }
-            ],
-
-            // F2 slots (2 classes per week)
-            'F2': [
-                { day: 'TUE', period: 6, type: 'theory' },
-                { day: 'FRI', period: 9, type: 'theory' }
-            ],
-
-            // G1 slots (2 classes per week)
-            'G1': [
-                { day: 'TUE', period: 3, type: 'theory' },
-                { day: 'SAT', period: 3, type: 'theory' }
-            ],
-
-            // G2 slots (2 classes per week)
-            'G2': [
-                { day: 'TUE', period: 9, type: 'theory' },
-                { day: 'WED', period: 7, type: 'theory' }
-            ],
-
-            // ====== T-THEORY SLOTS (1 class each) ======
-
-            'TA1': [{ day: 'FRI', period: 2, type: 'theory' }],
-            'TA2': [{ day: 'FRI', period: 8, type: 'theory' }],
-            'TB1': [{ day: 'FRI', period: 1, type: 'theory' }],
-            'TB2': [{ day: 'FRI', period: 7, type: 'theory' }],
-            'TC1': [{ day: 'TUE', period: 3, type: 'theory' }],
-            'TC2': [{ day: 'TUE', period: 9, type: 'theory' }],
-            'TD1': [{ day: 'THU', period: 2, type: 'theory' }],
-            'TD2': [{ day: 'THU', period: 9, type: 'theory' }],
-            'TE1': [{ day: 'FRI', period: 4, type: 'theory' }],
-            'TE2': [{ day: 'THU', period: 6, type: 'theory' }],
-            'TF1': [{ day: 'SAT', period: 3, type: 'theory' }],
-            'TF2': [{ day: 'WED', period: 7, type: 'theory' }],
-            'TG1': [{ day: 'THU', period: 2, type: 'theory' }],
-            'TG2': [{ day: 'THU', period: 9, type: 'theory' }],
-
-            // ====== TAA/TBB/TCC/TDD/TEE/TFF/TGG SLOTS (1 class each) ======
-
-            'TAA1': [{ day: 'THU', period: 3, type: 'theory' }],
-            'TAA2': [{ day: 'SAT', period: 8, type: 'theory' }],
-            'TBB1': [{ day: 'THU', period: 4, type: 'theory' }],
-            'TBB2': [{ day: 'SAT', period: 9, type: 'theory' }],
-            'TCC1': [{ day: 'FRI', period: 0, type: 'theory' }],
-            'TCC2': [{ day: 'WED', period: 10, type: 'theory' }],
-            'TDD1': [{ day: 'SAT', period: 0, type: 'theory' }],
-            'TDD2': [{ day: 'TUE', period: 10, type: 'theory' }],
-            'TEE1': [{ day: 'THU', period: 0, type: 'theory' }],
-            'TEE2': [{ day: 'FRI', period: 10, type: 'theory' }],
-            'TFF1': [{ day: 'TUE', period: 0, type: 'theory' }],
-            'TFF2': [{ day: 'SAT', period: 10, type: 'theory' }],
-            'TGG1': [{ day: 'WED', period: 0, type: 'theory' }],
-            'TGG2': [{ day: 'THU', period: 10, type: 'theory' }],
-
-            // ====== SPECIAL SLOTS (1 class each) ======
-
-            'SC1': [{ day: 'WED', period: 8, type: 'theory' }],
-            'SC2': [{ day: 'WED', period: 3, type: 'theory' }],
-            'SD1': [{ day: 'SAT', period: 7, type: 'theory' }],
-            'SD2': [{ day: 'FRI', period: 4, type: 'theory' }],
-            'SE1': [{ day: 'THU', period: 6, type: 'theory' }],
-            'SE2': [{ day: 'SAT', period: 1, type: 'theory' }],
-
-            // ====== LAB SLOTS ======
-
-            // TUESDAY Labs
-            'L1': [{ day: 'TUE', period: 0, type: 'lab' }],
-            'L2': [{ day: 'TUE', period: 1, type: 'lab' }],
-            'L3': [{ day: 'TUE', period: 2, type: 'lab' }],
-            'L4': [{ day: 'TUE', period: 3, type: 'lab' }],
-            'L5': [{ day: 'TUE', period: 4, type: 'lab' }],
-            'L31': [{ day: 'TUE', period: 6, type: 'lab' }],
-            'L32': [{ day: 'TUE', period: 7, type: 'lab' }],
-            'L33': [{ day: 'TUE', period: 8, type: 'lab' }],
-            'L34': [{ day: 'TUE', period: 9, type: 'lab' }],
-            'L35': [{ day: 'TUE', period: 10, type: 'lab' }],
-
-            // WEDNESDAY Labs
-            'L7': [{ day: 'WED', period: 0, type: 'lab' }],
-            'L8': [{ day: 'WED', period: 1, type: 'lab' }],
-            'L9': [{ day: 'WED', period: 2, type: 'lab' }],
-            'L10': [{ day: 'WED', period: 3, type: 'lab' }],
-            'L11': [{ day: 'WED', period: 4, type: 'lab' }],
-            'L37': [{ day: 'WED', period: 6, type: 'lab' }],
-            'L38': [{ day: 'WED', period: 7, type: 'lab' }],
-            'L39': [{ day: 'WED', period: 8, type: 'lab' }],
-            'L40': [{ day: 'WED', period: 9, type: 'lab' }],
-            'L41': [{ day: 'WED', period: 10, type: 'lab' }],
-
-            // THURSDAY Labs
-            'L13': [{ day: 'THU', period: 0, type: 'lab' }],
-            'L14': [{ day: 'THU', period: 1, type: 'lab' }],
-            'L15': [{ day: 'THU', period: 2, type: 'lab' }],
-            'L16': [{ day: 'THU', period: 3, type: 'lab' }],
-            'L17': [{ day: 'THU', period: 4, type: 'lab' }],
-            'L43': [{ day: 'THU', period: 6, type: 'lab' }],
-            'L44': [{ day: 'THU', period: 7, type: 'lab' }],
-            'L45': [{ day: 'THU', period: 8, type: 'lab' }],
-            'L46': [{ day: 'THU', period: 9, type: 'lab' }],
-            'L47': [{ day: 'THU', period: 10, type: 'lab' }],
-
-            // FRIDAY Labs
-            'L19': [{ day: 'FRI', period: 0, type: 'lab' }],
-            'L20': [{ day: 'FRI', period: 1, type: 'lab' }],
-            'L21': [{ day: 'FRI', period: 2, type: 'lab' }],
-            'L22': [{ day: 'FRI', period: 3, type: 'lab' }],
-            'L23': [{ day: 'FRI', period: 4, type: 'lab' }],
-            'L49': [{ day: 'FRI', period: 6, type: 'lab' }],
-            'L50': [{ day: 'FRI', period: 7, type: 'lab' }],
-            'L51': [{ day: 'FRI', period: 8, type: 'lab' }],
-            'L52': [{ day: 'FRI', period: 9, type: 'lab' }],
-            'L53': [{ day: 'FRI', period: 10, type: 'lab' }],
-
-            // SATURDAY Labs
-            'L25': [{ day: 'SAT', period: 0, type: 'lab' }],
-            'L26': [{ day: 'SAT', period: 1, type: 'lab' }],
-            'L27': [{ day: 'SAT', period: 2, type: 'lab' }],
-            'L28': [{ day: 'SAT', period: 3, type: 'lab' }],
-            'L29': [{ day: 'SAT', period: 4, type: 'lab' }],
-            'L55': [{ day: 'SAT', period: 6, type: 'lab' }],
-            'L56': [{ day: 'SAT', period: 7, type: 'lab' }],
-            'L57': [{ day: 'SAT', period: 8, type: 'lab' }],
-            'L58': [{ day: 'SAT', period: 9, type: 'lab' }],
-            'L59': [{ day: 'SAT', period: 10, type: 'lab' }]
-        };
-
-        let selectedCourses = [];
-        let timetableData = {};
-        let currentCreditType = 4;
-        let selectedSlot = null;
-        let currentLabSlot = null;
-
-        // ✅ Initialize properly when DOM loads
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('✅ DOM Content Loaded - Initializing...');
-            initializeTimetableData();
-            populateSlots(4);
-            updateStats();
-            updateSelectedCoursesList();
-            setupDropzone();
-            console.log('✅ Initialization Complete!');
-        });
-
-        function initializeTimetableData() {
-            const days = ['TUE', 'WED', 'THU', 'FRI', 'SAT'];
-            days.forEach(day => {
-                timetableData[day] = {
-                    theory: Array(12).fill(null),
-                    lab: Array(12).fill(null)
-                };
-            });
-            console.log('✅ Timetable data initialized');
-        }
-
-        function switchCreditTab(credits) {
-            console.log('Switching to credit tab:', credits);
-            currentCreditType = credits;
-
-            document.querySelectorAll('.credit-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-
-            populateSlots(credits);
-            selectedSlot = null;
-        }
-
-        function populateSlots(credits) {
-            console.log('Populating slots for credits:', credits);
-            const container = document.getElementById('theorySlots');
-            container.innerHTML = '';
-
-            creditSlots[credits].forEach(slot => {
-                const option = document.createElement('div');
-                option.className = 'slot-option';
-                option.innerHTML = `
+    creditSlots[credits].forEach(slot => {
+        const option = document.createElement('div');
+        option.className = 'slot-option';
+        option.innerHTML = `
             <span>${slot}</span>
             <span class="credit-badge">${credits}C</span>
         `;
-                option.onclick = () => selectSlot(option, slot, 'theory');
-                container.appendChild(option);
-            });
-            console.log(`✅ Populated ${creditSlots[credits].length} slots`);
-        }
+        option.onclick = () => selectSlot(option, slot, 'theory');
+        container.appendChild(option);
+    });
+    console.log(`✅ Populated ${creditSlots[credits].length} slots`);
+}
 
-        function selectSlot(element, slot, type) {
-            console.log('Slot selected:', slot, type);
-            const container = element.parentNode;
-            container.querySelectorAll('.slot-option').forEach(opt => opt.classList.remove('selected'));
+function selectSlot(element, slot, type) {
+    console.log('Slot selected:', slot, type);
+    const container = element.parentNode;
+    container.querySelectorAll('.slot-option').forEach(opt => opt.classList.remove('selected'));
 
-            element.classList.add('selected');
-            selectedSlot = { slot, type, credits: type === 'lab' ? 1 : currentCreditType };
-            console.log('Selected slot:', selectedSlot);
-        }
+    element.classList.add('selected');
+    selectedSlot = { slot, type, credits: type === 'lab' ? 1 : currentCreditType };
+    console.log('Selected slot:', selectedSlot);
+}
 
-        function handleLabSlotInput() {
-            const input = document.getElementById('labSlotInput');
-            const value = input.value.trim().toUpperCase();
-            const validation = document.getElementById('labInputValidation');
+function handleLabSlotInput() {
+    const input = document.getElementById('labSlotInput');
+    const value = input.value.trim().toUpperCase();
+    const validation = document.getElementById('labInputValidation');
 
-            const labSlotPattern = /^L\d{1,2}\+L\d{1,2}$/;
+    const labSlotPattern = /^L\d{1,2}\+L\d{1,2}$/;
 
-            if (value === '') {
-                validation.style.display = 'none';
-                currentLabSlot = null;
-                return;
-            }
+    if (value === '') {
+        validation.style.display = 'none';
+        currentLabSlot = null;
+        return;
+    }
 
-            if (labSlotPattern.test(value)) {
-                validation.className = 'input-validation validation-success';
-                validation.textContent = '✓ Valid lab slot format';
-                validation.style.display = 'block';
-                currentLabSlot = value;
-            } else {
-                validation.className = 'input-validation validation-error';
-                validation.textContent = '✗ Invalid format. Use L##+L## (e.g., L1+L2, L31+L32)';
-                validation.style.display = 'block';
-                currentLabSlot = null;
-            }
+    if (labSlotPattern.test(value)) {
+        validation.className = 'input-validation validation-success';
+        validation.textContent = '✓ Valid lab slot format';
+        validation.style.display = 'block';
+        currentLabSlot = value;
+    } else {
+        validation.className = 'input-validation validation-error';
+        validation.textContent = '✗ Invalid format. Use L##+L## (e.g., L1+L2, L31+L32)';
+        validation.style.display = 'block';
+        currentLabSlot = null;
+    }
 
-            updateLabSuggestions(value);
-        }
+    updateLabSuggestions(value);
+}
 
-        function updateLabSuggestions(input) {
-            const suggestions = document.getElementById('labSuggestions');
-            const filtered = labSlotSuggestions.filter(slot =>
-                slot.toLowerCase().includes(input.toLowerCase())
-            );
+function updateLabSuggestions(input) {
+    const suggestions = document.getElementById('labSuggestions');
+    const filtered = labSlotSuggestions.filter(slot =>
+        slot.toLowerCase().includes(input.toLowerCase())
+    );
 
-            if (filtered.length > 0 && input.length > 0) {
-                suggestions.innerHTML = filtered.map(slot =>
-                    `<div class="lab-suggestion" onclick="selectLabSuggestion('${slot}')">${slot}</div>`
-                ).join('');
-                suggestions.style.display = 'block';
-            } else {
-                suggestions.style.display = 'none';
-            }
-        }
+    if (filtered.length > 0 && input.length > 0) {
+        suggestions.innerHTML = filtered.map(slot =>
+            `<div class="lab-suggestion" onclick="selectLabSuggestion('${slot}')">${slot}</div>`
+        ).join('');
+        suggestions.style.display = 'block';
+    } else {
+        suggestions.style.display = 'none';
+    }
+}
 
-        function selectLabSuggestion(slot) {
-            document.getElementById('labSlotInput').value = slot;
-            currentLabSlot = slot;
+function selectLabSuggestion(slot) {
+    document.getElementById('labSlotInput').value = slot;
+    currentLabSlot = slot;
 
-            const validation = document.getElementById('labInputValidation');
-            validation.className = 'input-validation validation-success';
-            validation.textContent = '✓ Valid lab slot selected';
-            validation.style.display = 'block';
+    const validation = document.getElementById('labInputValidation');
+    validation.className = 'input-validation validation-success';
+    validation.textContent = '✓ Valid lab slot selected';
+    validation.style.display = 'block';
 
-            hideLabSuggestions();
-        }
+    hideLabSuggestions();
+}
 
-        function showLabSuggestions() {
-            const input = document.getElementById('labSlotInput').value;
-            if (input.trim() !== '') {
-                updateLabSuggestions(input);
-            } else {
-                document.getElementById('labSuggestions').style.display = 'block';
-                document.getElementById('labSuggestions').innerHTML = labSlotSuggestions.map(slot =>
-                    `<div class="lab-suggestion" onclick="selectLabSuggestion('${slot}')">${slot}</div>`
-                ).join('');
-            }
-        }
+function showLabSuggestions() {
+    const input = document.getElementById('labSlotInput').value;
+    if (input.trim() !== '') {
+        updateLabSuggestions(input);
+    } else {
+        document.getElementById('labSuggestions').style.display = 'block';
+        document.getElementById('labSuggestions').innerHTML = labSlotSuggestions.map(slot =>
+            `<div class="lab-suggestion" onclick="selectLabSuggestion('${slot}')">${slot}</div>`
+        ).join('');
+    }
+}
 
-        function hideLabSuggestions() {
-            setTimeout(() => {
-                document.getElementById('labSuggestions').style.display = 'none';
-            }, 150);
-        }
+function hideLabSuggestions() {
+    setTimeout(() => {
+        document.getElementById('labSuggestions').style.display = 'none';
+    }, 150);
+}
 
-        // ✅ Check for duplicate course names
-        function checkForDuplicateCourse(courseName, courseType) {
-            return selectedCourses.find(course =>
-                course.name.toLowerCase() === courseName.toLowerCase() &&
-                course.type === courseType
-            );
-        }
+// ✅ Check for duplicate course names
+function checkForDuplicateCourse(courseName, courseType) {
+    return selectedCourses.find(course =>
+        course.name.toLowerCase() === courseName.toLowerCase() &&
+        course.type === courseType
+    );
+}
 
-        function addTheoryCourse() {
-            console.log('🎓 Adding theory course...');
-            const courseName = document.getElementById('theoryCourseName').value.trim();
+function addTheoryCourse() {
+    console.log('🎓 Adding theory course...');
+    const courseName = document.getElementById('theoryCourseName').value.trim();
 
-            if (!courseName || !selectedSlot || selectedSlot.type !== 'theory') {
-                alert('Please enter course name and select a theory slot');
-                return;
-            }
+    if (!courseName || !selectedSlot || selectedSlot.type !== 'theory') {
+        alert('Please enter course name and select a theory slot');
+        return;
+    }
 
-            // Check if course with same name exists
-            const existingCourse = checkForDuplicateCourse(courseName, 'theory');
+    // Check if course with same name exists
+    const existingCourse = checkForDuplicateCourse(courseName, 'theory');
 
-            // If course exists, remove it first
-            if (existingCourse) {
-                console.log(`🔄 Updating existing course: ${courseName}`);
-                removeCourseFromTimetable(existingCourse);
-                selectedCourses = selectedCourses.filter(c => c.id !== existingCourse.id);
-            }
+    // If course exists, remove it first
+    if (existingCourse) {
+        console.log(`🔄 Updating existing course: ${courseName}`);
+        removeCourseFromTimetable(existingCourse);
+        selectedCourses = selectedCourses.filter(c => c.id !== existingCourse.id);
+    }
 
-            const slots = selectedSlot.slot.split('+');
-            console.log(`📝 Processing ${slots.length} slots for ${courseName}: ${slots.join(', ')}`);
+    const slots = selectedSlot.slot.split('+');
+    console.log(`📝 Processing ${slots.length} slots for ${courseName}: ${slots.join(', ')}`);
 
-            const clashes = checkForClashes(slots, 'theory', courseName);
+    const clashes = checkForClashes(slots, 'theory', courseName);
 
-            if (clashes.length > 0) {
-                showClashAlert(clashes, courseName, selectedSlot.slot, 'theory');
-                return;
-            }
+    if (clashes.length > 0) {
+        showClashAlert(clashes, courseName, selectedSlot.slot, 'theory');
+        return;
+    }
 
-            const course = {
-                id: Date.now(),
-                name: courseName,
-                slot: selectedSlot.slot,
-                type: 'theory',
-                credits: selectedSlot.credits,
-                slots: slots
-            };
+    const course = {
+        id: Date.now(),
+        name: courseName,
+        slot: selectedSlot.slot,
+        type: 'theory',
+        credits: selectedSlot.credits,
+        slots: slots
+    };
 
-            selectedCourses.push(course);
-            updateTimetable(course);
-            updateSelectedCoursesList();
-            updateStats();
-            clearTheoryInputs();
-            hideClashAlert();
+    selectedCourses.push(course);
+    updateTimetable(course);
+    updateSelectedCoursesList();
+    updateStats();
+    clearTheoryInputs();
+    hideClashAlert();
 
-            console.log(`✅ Course ${existingCourse ? 'updated' : 'added'}: ${courseName} with ${slots.length} slots`);
-        }
+    console.log(`✅ Course ${existingCourse ? 'updated' : 'added'}: ${courseName} with ${slots.length} slots`);
+}
 
-        function addLabCourse() {
-            console.log('🧪 Adding lab course...');
-            const courseName = document.getElementById('labCourseName').value.trim();
+function addLabCourse() {
+    console.log('🧪 Adding lab course...');
+    const courseName = document.getElementById('labCourseName').value.trim();
 
-            if (!courseName || !currentLabSlot) {
-                alert('Please enter lab name and provide a valid lab slot');
-                return;
-            }
+    if (!courseName || !currentLabSlot) {
+        alert('Please enter lab name and provide a valid lab slot');
+        return;
+    }
 
-            // Check if course with same name exists
-            const existingCourse = checkForDuplicateCourse(courseName, 'lab');
+    // Check if course with same name exists
+    const existingCourse = checkForDuplicateCourse(courseName, 'lab');
 
-            // If course exists, remove it first
-            if (existingCourse) {
-                console.log(`🔄 Updating existing lab course: ${courseName}`);
-                removeCourseFromTimetable(existingCourse);
-                selectedCourses = selectedCourses.filter(c => c.id !== existingCourse.id);
-            }
+    // If course exists, remove it first
+    if (existingCourse) {
+        console.log(`🔄 Updating existing lab course: ${courseName}`);
+        removeCourseFromTimetable(existingCourse);
+        selectedCourses = selectedCourses.filter(c => c.id !== existingCourse.id);
+    }
 
-            const slots = currentLabSlot.split('+');
-            const clashes = checkForClashes(slots, 'lab', courseName);
+    const slots = currentLabSlot.split('+');
+    const clashes = checkForClashes(slots, 'lab', courseName);
 
-            if (clashes.length > 0) {
-                showClashAlert(clashes, courseName, currentLabSlot, 'lab');
-                return;
-            }
+    if (clashes.length > 0) {
+        showClashAlert(clashes, courseName, currentLabSlot, 'lab');
+        return;
+    }
 
-            const course = {
-                id: Date.now(),
-                name: courseName,
-                slot: currentLabSlot,
-                type: 'lab',
-                credits: 1,
-                slots: slots
-            };
+    const course = {
+        id: Date.now(),
+        name: courseName,
+        slot: currentLabSlot,
+        type: 'lab',
+        credits: 1,
+        slots: slots
+    };
 
-            selectedCourses.push(course);
-            updateTimetable(course);
-            updateSelectedCoursesList();
-            updateStats();
-            clearLabInputs();
-            hideClashAlert();
+    selectedCourses.push(course);
+    updateTimetable(course);
+    updateSelectedCoursesList();
+    updateStats();
+    clearLabInputs();
+    hideClashAlert();
 
-            console.log(`✅ Lab course ${existingCourse ? 'updated' : 'added'}: ${courseName}`);
-        }
+    console.log(`✅ Lab course ${existingCourse ? 'updated' : 'added'}: ${courseName}`);
+}
 
-        // ✅ ENHANCED CLASH DETECTION - Detects both theory-theory and theory-lab clashes
-        function checkForClashes(newSlots, newCourseType, newCourseName) {
-            const clashes = [];
+// ✅ ENHANCED CLASH DETECTION - Detects both theory-theory and theory-lab clashes
+function checkForClashes(newSlots, newCourseType, newCourseName) {
+    const clashes = [];
 
-            console.log(`🔍 Checking clashes for ${newCourseType} course: ${newCourseName}`);
-            console.log(`📋 New slots to check: ${newSlots.join(', ')}`);
+    console.log(`🔍 Checking clashes for ${newCourseType} course: ${newCourseName}`);
+    console.log(`📋 New slots to check: ${newSlots.join(', ')}`);
 
-            newSlots.forEach(slot => {
-                if (slotMappings[slot]) {
-                    const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
+    newSlots.forEach(slot => {
+        if (slotMappings[slot]) {
+            const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
 
-                    slotInfos.forEach(slotInfo => {
-                        const { day, period, type: slotType } = slotInfo;
+            slotInfos.forEach(slotInfo => {
+                const { day, period, type: slotType } = slotInfo;
 
-                        // Check both theory and lab layers for conflicts
-                        // This handles theory vs theory, lab vs lab, and cross-type conflicts
-                        const theoryConflict = timetableData[day]?.theory[period];
-                        const labConflict = timetableData[day]?.lab[period];
+                // Check both theory and lab layers for conflicts
+                // This handles theory vs theory, lab vs lab, and cross-type conflicts
+                const theoryConflict = timetableData[day]?.theory[period];
+                const labConflict = timetableData[day]?.lab[period];
 
-                        // For theory slots, check if there's any existing course in that time slot
-                        if (slotType === 'theory') {
-                            if (theoryConflict) {
-                                clashes.push({
-                                    day: day,
-                                    period: period,
-                                    slot: slot,
-                                    type: 'theory',
-                                    conflictType: 'theory-theory',
-                                    existingCourse: theoryConflict,
-                                    timeSlot: timeSlots[period] || `Period ${period}`
-                                });
-                                console.log(`❌ Theory-Theory clash detected: ${day} ${timeSlots[period]} - ${theoryConflict.name}`);
-                            }
+                // For theory slots, check if there's any existing course in that time slot
+                if (slotType === 'theory') {
+                    if (theoryConflict) {
+                        clashes.push({
+                            day: day,
+                            period: period,
+                            slot: slot,
+                            type: 'theory',
+                            conflictType: 'theory-theory',
+                            existingCourse: theoryConflict,
+                            timeSlot: timeSlots[period] || `Period ${period}`
+                        });
+                        console.log(`❌ Theory-Theory clash detected: ${day} ${timeSlots[period]} - ${theoryConflict.name}`);
+                    }
 
-                            // Also check if lab conflicts with theory timing
-                            if (labConflict) {
-                                clashes.push({
-                                    day: day,
-                                    period: period,
-                                    slot: slot,
-                                    type: 'theory',
-                                    conflictType: 'theory-lab',
-                                    existingCourse: labConflict,
-                                    timeSlot: timeSlots[period] || `Period ${period}`
-                                });
-                                console.log(`❌ Theory-Lab clash detected: ${day} ${timeSlots[period]} - ${labConflict.name}`);
-                            }
-                        }
+                    // Also check if lab conflicts with theory timing
+                    if (labConflict) {
+                        clashes.push({
+                            day: day,
+                            period: period,
+                            slot: slot,
+                            type: 'theory',
+                            conflictType: 'theory-lab',
+                            existingCourse: labConflict,
+                            timeSlot: timeSlots[period] || `Period ${period}`
+                        });
+                        console.log(`❌ Theory-Lab clash detected: ${day} ${timeSlots[period]} - ${labConflict.name}`);
+                    }
+                }
 
-                        // For lab slots, check if there's any existing course in that time slot
-                        if (slotType === 'lab') {
-                            if (labConflict) {
-                                clashes.push({
-                                    day: day,
-                                    period: period,
-                                    slot: slot,
-                                    type: 'lab',
-                                    conflictType: 'lab-lab',
-                                    existingCourse: labConflict,
-                                    timeSlot: timeSlots[period] || `Period ${period}`
-                                });
-                                console.log(`❌ Lab-Lab clash detected: ${day} ${timeSlots[period]} - ${labConflict.name}`);
-                            }
+                // For lab slots, check if there's any existing course in that time slot
+                if (slotType === 'lab') {
+                    if (labConflict) {
+                        clashes.push({
+                            day: day,
+                            period: period,
+                            slot: slot,
+                            type: 'lab',
+                            conflictType: 'lab-lab',
+                            existingCourse: labConflict,
+                            timeSlot: timeSlots[period] || `Period ${period}`
+                        });
+                        console.log(`❌ Lab-Lab clash detected: ${day} ${timeSlots[period]} - ${labConflict.name}`);
+                    }
 
-                            // Also check if theory conflicts with lab timing
-                            if (theoryConflict) {
-                                clashes.push({
-                                    day: day,
-                                    period: period,
-                                    slot: slot,
-                                    type: 'lab',
-                                    conflictType: 'lab-theory',
-                                    existingCourse: theoryConflict,
-                                    timeSlot: timeSlots[period] || `Period ${period}`
-                                });
-                                console.log(`❌ Lab-Theory clash detected: ${day} ${timeSlots[period]} - ${theoryConflict.name}`);
-                            }
-                        }
-                    });
-                } else {
-                    console.warn(`⚠️ Slot mapping not found for: ${slot}`);
+                    // Also check if theory conflicts with lab timing
+                    if (theoryConflict) {
+                        clashes.push({
+                            day: day,
+                            period: period,
+                            slot: slot,
+                            type: 'lab',
+                            conflictType: 'lab-theory',
+                            existingCourse: theoryConflict,
+                            timeSlot: timeSlots[period] || `Period ${period}`
+                        });
+                        console.log(`❌ Lab-Theory clash detected: ${day} ${timeSlots[period]} - ${theoryConflict.name}`);
+                    }
                 }
             });
-
-            console.log(`📊 Total clashes found: ${clashes.length}`);
-            return clashes;
+        } else {
+            console.warn(`⚠️ Slot mapping not found for: ${slot}`);
         }
+    });
 
-        // ✅ ENHANCED CLASH ALERT - Shows detailed conflict information
-        function showClashAlert(clashes, courseName, slot, courseType) {
-            const alertDiv = document.getElementById('clashAlert');
-            const detailsDiv = document.getElementById('clashDetails');
+    console.log(`📊 Total clashes found: ${clashes.length}`);
+    return clashes;
+}
 
-            let clashText = `Cannot add "${courseName}" (${courseType.toUpperCase()}: ${slot}) due to scheduling conflicts:<br><br>`;
+// ✅ ENHANCED CLASH ALERT - Shows detailed conflict information
+function showClashAlert(clashes, courseName, slot, courseType) {
+    const alertDiv = document.getElementById('clashAlert');
+    const detailsDiv = document.getElementById('clashDetails');
 
-            // Group clashes by type for better display
-            const clashGroups = {
-                'theory-theory': [],
-                'theory-lab': [],
-                'lab-theory': [],
-                'lab-lab': []
+    let clashText = `Cannot add "${courseName}" (${courseType.toUpperCase()}: ${slot}) due to scheduling conflicts:<br><br>`;
+
+    // Group clashes by type for better display
+    const clashGroups = {
+        'theory-theory': [],
+        'theory-lab': [],
+        'lab-theory': [],
+        'lab-lab': []
+    };
+
+    clashes.forEach(clash => {
+        clashGroups[clash.conflictType].push(clash);
+    });
+
+    // Display each type of clash
+    Object.keys(clashGroups).forEach(conflictType => {
+        const conflicts = clashGroups[conflictType];
+        if (conflicts.length > 0) {
+            const typeDescriptions = {
+                'theory-theory': '🎓 Theory vs Theory Conflicts:',
+                'theory-lab': '🎓⚗️ Theory vs Lab Conflicts:',
+                'lab-theory': '⚗️🎓 Lab vs Theory Conflicts:',
+                'lab-lab': '⚗️ Lab vs Lab Conflicts:'
             };
 
-            clashes.forEach(clash => {
-                clashGroups[clash.conflictType].push(clash);
+            clashText += `<strong>${typeDescriptions[conflictType]}</strong><br>`;
+
+            conflicts.forEach(clash => {
+                clashText += `• <strong>${clash.day} ${clash.timeSlot}</strong> - Conflicts with "${clash.existingCourse.name}" (${clash.existingCourse.type.toUpperCase()}: ${clash.existingCourse.slot})<br>`;
             });
 
-            // Display each type of clash
-            Object.keys(clashGroups).forEach(conflictType => {
-                const conflicts = clashGroups[conflictType];
-                if (conflicts.length > 0) {
-                    const typeDescriptions = {
-                        'theory-theory': '🎓 Theory vs Theory Conflicts:',
-                        'theory-lab': '🎓⚗️ Theory vs Lab Conflicts:',
-                        'lab-theory': '⚗️🎓 Lab vs Theory Conflicts:',
-                        'lab-lab': '⚗️ Lab vs Lab Conflicts:'
-                    };
-
-                    clashText += `<strong>${typeDescriptions[conflictType]}</strong><br>`;
-
-                    conflicts.forEach(clash => {
-                        clashText += `• <strong>${clash.day} ${clash.timeSlot}</strong> - Conflicts with "${clash.existingCourse.name}" (${clash.existingCourse.type.toUpperCase()}: ${clash.existingCourse.slot})<br>`;
-                    });
-
-                    clashText += '<br>';
-                }
-            });
-
-            clashText += '<em>Please choose a different time slot or remove the conflicting course first.</em>';
-
-            detailsDiv.innerHTML = clashText;
-            alertDiv.style.display = 'block';
-
-            // Auto hide after 10 seconds for better UX
-            setTimeout(() => {
-                hideClashAlert();
-            }, 10000);
+            clashText += '<br>';
         }
+    });
 
-        function hideClashAlert() {
-            document.getElementById('clashAlert').style.display = 'none';
-        }
+    clashText += '<em>Please choose a different time slot or remove the conflicting course first.</em>';
 
-        // ✅ Update timetable with multiple slot mappings
-        function updateTimetable(course) {
-            let classesPlaced = 0;
-            const courseCode = course.code || '';
-            let displayTitle = course.name;
-            if (courseCode && displayTitle.includes(`(${courseCode})`)) {
-                displayTitle = displayTitle.replace(`(${courseCode})`, '').trim();
-            }
+    detailsDiv.innerHTML = clashText;
+    alertDiv.style.display = 'block';
 
-            course.slots.forEach(slot => {
-                if (slotMappings[slot]) {
-                    const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
+    // Auto hide after 10 seconds for better UX
+    setTimeout(() => {
+        hideClashAlert();
+    }, 10000);
+}
 
-                    slotInfos.forEach(slotInfo => {
-                        const day = slotInfo.day;
-                        const period = slotInfo.period;
-                        const type = slotInfo.type;
+function hideClashAlert() {
+    document.getElementById('clashAlert').style.display = 'none';
+}
 
-                        // Store course data
-                        timetableData[day][type][period] = course;
+// ✅ Update timetable with multiple slot mappings
+function updateTimetable(course) {
+    let classesPlaced = 0;
+    const courseCode = course.code || '';
+    let displayTitle = course.name;
+    if (courseCode && displayTitle.includes(`(${courseCode})`)) {
+        displayTitle = displayTitle.replace(`(${courseCode})`, '').trim();
+    }
 
-                        // Find the correct cell
-                        if (period <= 11) {
-                            const cell = document.querySelector(`[data-day="${day}"][data-period="${period}"][data-type="${type}"]`);
-                            if (cell) {
-                                cell.className = `slot-cell ${type}-cell slot-occupied`;
+    course.slots.forEach(slot => {
+        if (slotMappings[slot]) {
+            const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
 
-                                if (course.type === 'lab') {
-                                    cell.classList.add('lab-slot');
-                                } else {
-                                    cell.classList.add(`credit-${course.credits}-slot`);
-                                }
+            slotInfos.forEach(slotInfo => {
+                const day = slotInfo.day;
+                const period = slotInfo.period;
+                const type = slotInfo.type;
 
-                                cell.innerHTML = `
+                // Store course data
+                timetableData[day][type][period] = course;
+
+                // Find the correct cell
+                if (period <= 11) {
+                    const cell = document.querySelector(`[data-day="${day}"][data-period="${period}"][data-type="${type}"]`);
+                    if (cell) {
+                        cell.className = `slot-cell ${type}-cell slot-occupied`;
+
+                        if (course.type === 'lab') {
+                            cell.classList.add('lab-slot');
+                        } else {
+                            cell.classList.add(`credit-${course.credits}-slot`);
+                        }
+
+                        cell.innerHTML = `
                                     <div class="slot-card">
                                         <div class="slot-card-code">${escapeHtml(courseCode || displayTitle)}</div>
                                         <div class="slot-card-name" title="${escapeHtml(course.name)}">${escapeHtml(displayTitle)}</div>
@@ -669,81 +669,81 @@
                                         </div>
                                     </div>
                                 `;
-                                cell.title = `${course.name} - ${slot}${course.venue ? ' (' + course.venue + ')' : ''}${course.faculty ? ' - ' + course.faculty : ''}`;
-                                classesPlaced++;
-                            }
-                        }
-                    });
-                } else {
-                    console.warn(`No mapping found for slot: ${slot}`);
+                        cell.title = `${course.name} - ${slot}${course.venue ? ' (' + course.venue + ')' : ''}${course.faculty ? ' - ' + course.faculty : ''}`;
+                        classesPlaced++;
+                    }
                 }
             });
-            console.log(`Placed ${classesPlaced} classes for ${course.name}`);
+        } else {
+            console.warn(`No mapping found for slot: ${slot}`);
         }
+    });
+    console.log(`Placed ${classesPlaced} classes for ${course.name}`);
+}
 
-        // ✅ Helper function to remove course from timetable only
-        function removeCourseFromTimetable(course) {
-            course.slots.forEach(slot => {
-                if (slotMappings[slot]) {
-                    const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
+// ✅ Helper function to remove course from timetable only
+function removeCourseFromTimetable(course) {
+    course.slots.forEach(slot => {
+        if (slotMappings[slot]) {
+            const slotInfos = Array.isArray(slotMappings[slot]) ? slotMappings[slot] : [slotMappings[slot]];
 
-                    slotInfos.forEach(slotInfo => {
-                        const day = slotInfo.day;
-                        const period = slotInfo.period;
-                        const type = slotInfo.type;
+            slotInfos.forEach(slotInfo => {
+                const day = slotInfo.day;
+                const period = slotInfo.period;
+                const type = slotInfo.type;
 
-                        // Clear course data
-                        if (timetableData[day] && timetableData[day][type][period]) {
-                            timetableData[day][type][period] = null;
-                        }
+                // Clear course data
+                if (timetableData[day] && timetableData[day][type][period]) {
+                    timetableData[day][type][period] = null;
+                }
 
-                        // Find and clear the cell
-                        if (period <= 11) { // Updated to handle 12 periods (0-11)
-                            const cell = document.querySelector(`[data-day="${day}"][data-period="${period}"][data-type="${type}"]`);
-                            if (cell) {
-                                cell.className = `slot-cell ${type}-cell`;
-                                cell.innerHTML = '';
-                                cell.title = '';
-                            }
-                        }
-                    });
+                // Find and clear the cell
+                if (period <= 11) { // Updated to handle 12 periods (0-11)
+                    const cell = document.querySelector(`[data-day="${day}"][data-period="${period}"][data-type="${type}"]`);
+                    if (cell) {
+                        cell.className = `slot-cell ${type}-cell`;
+                        cell.innerHTML = '';
+                        cell.title = '';
+                    }
                 }
             });
-            console.log(`🗑️ Removed course from timetable: ${course.name}`);
         }
+    });
+    console.log(`🗑️ Removed course from timetable: ${course.name}`);
+}
 
-        function removeCourse(courseId) {
-            const course = selectedCourses.find(c => c.id === courseId);
-            if (!course) return;
+function removeCourse(courseId) {
+    const course = selectedCourses.find(c => c.id === courseId);
+    if (!course) return;
 
-            removeCourseFromTimetable(course);
-            selectedCourses = selectedCourses.filter(c => c.id !== courseId);
-            updateSelectedCoursesList();
-            updateStats();
-            hideClashAlert();
+    removeCourseFromTimetable(course);
+    selectedCourses = selectedCourses.filter(c => c.id !== courseId);
+    updateSelectedCoursesList();
+    updateStats();
+    hideClashAlert();
 
-            for (const [key, id] of placedOcrSlots.entries()) {
-                if (id === courseId) {
-                    placedOcrSlots.delete(key);
-                }
-            }
-
-            if (typeof refreshOcrCourseButtons === 'function') {
-                refreshOcrCourseButtons(course.code);
-            }
-
-            console.log(`🗑️ Course removed: ${course.name}`);
+    for (const [key, id] of placedOcrSlots.entries()) {
+        if (id === courseId) {
+            placedOcrSlots.delete(key);
         }
+    }
 
-        function updateSelectedCoursesList() {
-            const container = document.getElementById('selectedCourses');
+    if (typeof refreshOcrCourseButtons === 'function') {
+        refreshOcrCourseButtons(course.code);
+    }
 
-            if (selectedCourses.length === 0) {
-                container.innerHTML = '<p style="color: #7f8c8d; font-style: italic; text-align: center; padding: 20px;">No courses selected yet. Add your first course!</p>';
-                return;
-            }
+    console.log(`🗑️ Course removed: ${course.name}`);
+}
 
-            container.innerHTML = selectedCourses.map(course => `
+function updateSelectedCoursesList() {
+    const container = document.getElementById('selectedCourses');
+
+    if (selectedCourses.length === 0) {
+        container.innerHTML = '<p style="color: #7f8c8d; font-style: italic; text-align: center; padding: 20px;">No courses selected yet. Add your first course!</p>';
+        return;
+    }
+
+    container.innerHTML = selectedCourses.map(course => `
         <div class="course-item ${course.type === 'lab' ? 'lab' : `credit-${course.credits}`}">
             <div>
                 <strong>${course.name}</strong><br>
@@ -754,69 +754,69 @@
             </button>
         </div>
     `).join('');
-        }
+}
 
-        function updateStats() {
-            const totalCredits = selectedCourses.reduce((sum, course) => sum + course.credits, 0);
-            const totalCourses = selectedCourses.filter(c => c.type === 'theory').length;
-            const totalLabs = selectedCourses.filter(c => c.type === 'lab').length;
+function updateStats() {
+    const totalCredits = selectedCourses.reduce((sum, course) => sum + course.credits, 0);
+    const totalCourses = selectedCourses.filter(c => c.type === 'theory').length;
+    const totalLabs = selectedCourses.filter(c => c.type === 'lab').length;
 
-            document.getElementById('totalCredits').textContent = totalCredits;
-            document.getElementById('totalCourses').textContent = totalCourses;
-            document.getElementById('totalLabs').textContent = totalLabs;
-        }
+    document.getElementById('totalCredits').textContent = totalCredits;
+    document.getElementById('totalCourses').textContent = totalCourses;
+    document.getElementById('totalLabs').textContent = totalLabs;
+}
 
-        function clearTheoryInputs() {
-            document.getElementById('theoryCourseName').value = '';
-            document.querySelectorAll('#theorySlots .slot-option').forEach(opt => opt.classList.remove('selected'));
-            selectedSlot = null;
-        }
+function clearTheoryInputs() {
+    document.getElementById('theoryCourseName').value = '';
+    document.querySelectorAll('#theorySlots .slot-option').forEach(opt => opt.classList.remove('selected'));
+    selectedSlot = null;
+}
 
-        function clearLabInputs() {
-            document.getElementById('labCourseName').value = '';
-            document.getElementById('labSlotInput').value = '';
-            document.getElementById('labInputValidation').style.display = 'none';
-            currentLabSlot = null;
-        }
+function clearLabInputs() {
+    document.getElementById('labCourseName').value = '';
+    document.getElementById('labSlotInput').value = '';
+    document.getElementById('labInputValidation').style.display = 'none';
+    currentLabSlot = null;
+}
 
-        function clearAll() {
-            if (selectedCourses.length === 0) return;
+function clearAll() {
+    if (selectedCourses.length === 0) return;
 
-            if (confirm('Are you sure you want to clear all courses? This action cannot be undone.')) {
-                selectedCourses = [];
+    if (confirm('Are you sure you want to clear all courses? This action cannot be undone.')) {
+        selectedCourses = [];
 
-                // Clear all timetable data
-                Object.keys(timetableData).forEach(day => {
-                    timetableData[day].theory.fill(null);
-                    timetableData[day].lab.fill(null);
-                });
-
-                // Clear all occupied cells
-                document.querySelectorAll('.slot-occupied').forEach(cell => {
-                    const type = cell.getAttribute('data-type');
-                    cell.className = `slot-cell ${type}-cell`;
-                    cell.innerHTML = '';
-                    cell.title = '';
-                });
-
-                updateSelectedCoursesList();
-                updateStats();
-                hideClashAlert();
-
-                console.log('🧹 All courses cleared');
-            }
-        }
-
-        // Close suggestions when clicking outside
-        document.addEventListener('click', function (event) {
-            if (!event.target.closest('.lab-input-container') &&
-                !event.target.classList.contains('lab-suggestion')) {
-                hideLabSuggestions();
-            }
+        // Clear all timetable data
+        Object.keys(timetableData).forEach(day => {
+            timetableData[day].theory.fill(null);
+            timetableData[day].lab.fill(null);
         });
 
-        console.log('✅ VIT FFCS Timetable Manager with Enhanced Clash Detection Loaded Successfully!');
-    
+        // Clear all occupied cells
+        document.querySelectorAll('.slot-occupied').forEach(cell => {
+            const type = cell.getAttribute('data-type');
+            cell.className = `slot-cell ${type}-cell`;
+            cell.innerHTML = '';
+            cell.title = '';
+        });
+
+        updateSelectedCoursesList();
+        updateStats();
+        hideClashAlert();
+
+        console.log('🧹 All courses cleared');
+    }
+}
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function (event) {
+    if (!event.target.closest('.lab-input-container') &&
+        !event.target.classList.contains('lab-suggestion')) {
+        hideLabSuggestions();
+    }
+});
+
+console.log('✅ VIT FFCS Timetable Manager with Enhanced Clash Detection Loaded Successfully!');
+
 
 
 
@@ -920,10 +920,15 @@ function clearOcrStatus() {
 // Helper to merge multiple course lists, preserving all unique slots, faculties & venues
 function mergeCourseLists(existingCourses, incomingCourses) {
     const map = new Map();
-    const getCourseKey = (c) =>
-        (c.code && c.code !== 'N/A' ? c.code : c.name || '')
-            .trim()
-            .toUpperCase();
+    const getCourseKey = (c) => {
+        if (c.code && c.code !== 'N/A' && c.code !== 'CUSTOM') {
+            return c.code.trim().toUpperCase();
+        }
+        if (c.name && !c.name.startsWith('Course (') && c.name !== 'Registered Course') {
+            return c.name.trim().toUpperCase();
+        }
+        return 'IMPORTED_COURSE';
+    };
 
     function addCourse(c) {
         const key = getCourseKey(c);
@@ -946,11 +951,15 @@ function mergeCourseLists(existingCourses, incomingCourses) {
 
         const target = map.get(key);
         if (
-            (!target.name || target.name.startsWith('Course (')) &&
+            (!target.name || target.name.startsWith('Course (') || target.name === 'Registered Course') &&
             c.name &&
-            !c.name.startsWith('Course (')
+            !c.name.startsWith('Course (') &&
+            c.name !== 'Registered Course'
         ) {
             target.name = c.name;
+        }
+        if (!target.code && c.code && c.code !== 'N/A') {
+            target.code = c.code;
         }
         if (c.credit && (!target.credit || target.credit === 3)) {
             target.credit = c.credit;
@@ -1200,12 +1209,12 @@ function renderOcrCourses(courses) {
                             </thead>
                             <tbody>
                                 ${theorySlots.map((s, sIdx) => {
-                                    const slotCode = escapeHtml(s.slot);
-                                    const fac = escapeHtml(s.faculty || 'TBA');
-                                    const ven = escapeHtml(s.venue || 'TBA');
-                                    const key = `${code}_${slotCode}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    return `
+                const slotCode = escapeHtml(s.slot);
+                const fac = escapeHtml(s.faculty || 'TBA');
+                const ven = escapeHtml(s.venue || 'TBA');
+                const key = `${code}_${slotCode}`;
+                const isPlaced = placedOcrSlots.has(key);
+                return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
                                             <td>${fac}</td>
@@ -1221,7 +1230,7 @@ function renderOcrCourses(courses) {
                                             </td>
                                         </tr>
                                     `;
-                                }).join('')}
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1246,12 +1255,12 @@ function renderOcrCourses(courses) {
                             </thead>
                             <tbody>
                                 ${labSlots.map((s, sIdx) => {
-                                    const slotCode = escapeHtml(s.slot);
-                                    const fac = escapeHtml(s.faculty || 'TBA');
-                                    const ven = escapeHtml(s.venue || 'TBA');
-                                    const key = `${code}_${slotCode}`;
-                                    const isPlaced = placedOcrSlots.has(key);
-                                    return `
+                const slotCode = escapeHtml(s.slot);
+                const fac = escapeHtml(s.faculty || 'TBA');
+                const ven = escapeHtml(s.venue || 'TBA');
+                const key = `${code}_${slotCode}`;
+                const isPlaced = placedOcrSlots.has(key);
+                return `
                                         <tr>
                                             <td><span class="ocr-slot-pill">${slotCode}</span></td>
                                             <td>${fac}</td>
@@ -1267,7 +1276,7 @@ function renderOcrCourses(courses) {
                                             </td>
                                         </tr>
                                     `;
-                                }).join('')}
+            }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1535,9 +1544,20 @@ async function uploadScreenshot() {
             body: formData
         });
 
-        const data = await response.json();
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to process image');
+        const rawText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch {
+            throw new Error(
+                response.status === 413
+                    ? 'Screenshot too large (exceeds Vercel 4.5 MB limit).'
+                    : `Server returned an invalid response (${response.status}): ${rawText.slice(0, 100)}`
+            );
+        }
+
+        if (!response.ok || !data.success) {
+            throw new Error(data?.error || 'Failed to process image');
         }
 
         const courses = data.courses || [];
@@ -1604,13 +1624,13 @@ async function uploadScreenshot() {
                                     </thead>
                                     <tbody>
                                         ${offerings.map(offering => {
-                                            const s = offering.slot;
-                                            const fac = offering.faculty || 'TBA';
-                                            const ven = offering.venue || 'TBA';
-                                            const facKey = fac.trim().toLowerCase();
-                                            const key = `SS_${code}_${s}_${facKey}`;
-                                            const isPlaced = placedOcrSlots.has(key);
-                                            return `
+                        const s = offering.slot;
+                        const fac = offering.faculty || 'TBA';
+                        const ven = offering.venue || 'TBA';
+                        const facKey = fac.trim().toLowerCase();
+                        const key = `SS_${code}_${s}_${facKey}`;
+                        const isPlaced = placedOcrSlots.has(key);
+                        return `
                                                 <tr>
                                                     <td><span class="ocr-slot-pill">${escapeHtml(s)}</span></td>
                                                     <td style="font-weight:600; color:#0f172a;">${escapeHtml(fac)}</td>
@@ -1628,7 +1648,7 @@ async function uploadScreenshot() {
                                                     </td>
                                                 </tr>
                                             `;
-                                        }).join('')}
+                    }).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -1644,9 +1664,9 @@ async function uploadScreenshot() {
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
                         ${detectedSlots.map(slot => {
-                            const key = `SS_CUSTOM_${slot}_`;
-                            const isPlaced = placedOcrSlots.has(key);
-                            return `
+                    const key = `SS_CUSTOM_${slot}_`;
+                    const isPlaced = placedOcrSlots.has(key);
+                    return `
                                 <button class="ocr-add-slot-btn ${isPlaced ? 'placed' : ''}"
                                         data-course-code=""
                                         data-slot="${escapeHtml(slot)}"
@@ -1655,7 +1675,7 @@ async function uploadScreenshot() {
                                     ${isPlaced ? '✓ ' + escapeHtml(slot) + ' Added' : '➕ ' + escapeHtml(slot)}
                                 </button>
                             `;
-                        }).join('')}
+                }).join('')}
                     </div>
                 `;
             } else {
